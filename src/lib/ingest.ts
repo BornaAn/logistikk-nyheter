@@ -1,6 +1,6 @@
 import { prisma } from "./prisma";
-import { enabledSources } from "./sources";
-import { fetchFeed } from "./rss";
+import { enabledSources, type Source } from "./sources";
+import { fetchFeed, type FeedItem } from "./rss";
 import { extractArticleText } from "./extract";
 import { summarizeArticle } from "./summarize";
 
@@ -39,31 +39,54 @@ async function ingestNewArticles(): Promise<{
   let found = 0;
   let created = 0;
 
+  // Fetch every feed up front so we can interleave sources fairly below —
+  // otherwise a single high-volume source (e.g. FreightWaves) drains the
+  // whole run's cap before lower-volume sources ever get a turn.
+  const perSource: { source: Source; items: FeedItem[] }[] = [];
   for (const source of enabledSources()) {
-    if (created >= MAX_NEW_ARTICLES_PER_RUN) break;
-
-    let items;
     try {
-      items = await fetchFeed(source);
+      const items = await fetchFeed(source);
       sourcesOk++;
+      found += items.length;
+      perSource.push({ source, items });
     } catch (err) {
       sourcesFailed++;
       errors.push(`[${source.name}] feed-henting feilet: ${(err as Error).message}`);
-      continue;
     }
+  }
 
-    found += items.length;
+  // One batched dedup query instead of one per article.
+  const allUrls = perSource.flatMap((s) => s.items.map((i) => i.articleUrl));
+  const existingUrls = new Set(
+    allUrls.length
+      ? (
+          await prisma.article.findMany({
+            where: { articleUrl: { in: allUrls } },
+            select: { articleUrl: true },
+          })
+        ).map((a) => a.articleUrl)
+      : [],
+  );
 
-    for (const item of items) {
+  const queues = perSource.map(({ source, items }) => ({
+    source,
+    queue: items.filter((i) => !existingUrls.has(i.articleUrl)),
+  }));
+
+  // Round-robin one candidate per source per round, so every source gets
+  // a fair share of the cap instead of whichever source comes first in
+  // the list.
+  let progressed = true;
+  while (created < MAX_NEW_ARTICLES_PER_RUN && progressed) {
+    progressed = false;
+
+    for (const { source, queue } of queues) {
       if (created >= MAX_NEW_ARTICLES_PER_RUN) break;
+      const item = queue.shift();
+      if (!item) continue;
+      progressed = true;
 
       try {
-        const existing = await prisma.article.findUnique({
-          where: { articleUrl: item.articleUrl },
-          select: { id: true },
-        });
-        if (existing) continue;
-
         const extracted = await extractArticleText(item.articleUrl, item.rssText);
         const isLimited = Boolean(source.paywalled) || !extracted.isFullText;
 

@@ -123,6 +123,10 @@ helt automatisk hvert døgn, uten at du trenger å gjøre noe.
   gå til Vercel Pro med hyppigere cron.
 - Alle allerede lagrede artikler (samme `articleUrl`) hentes eller
   oppsummeres aldri på nytt, uansett hvor sjelden jobben kjører.
+- Innhentingen går i rundgang mellom kildene (ett kandidatforslag fra hver
+  kilde om gangen, ikke én kilde fullstendig ferdig før neste) slik at en
+  kilde med mye trafikk (f.eks. FreightWaves) ikke spiser opp hele dagens
+  kvote før andre kilder rekker å bidra.
 
 ## Kilder
 

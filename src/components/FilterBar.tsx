@@ -8,6 +8,9 @@ interface FilterBarProps {
   sources: string[];
 }
 
+const fieldClass =
+  "rounded-md border border-card-border bg-card px-3 py-2 text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-accent/40 focus:border-accent";
+
 export function FilterBar({ sources }: FilterBarProps) {
   const router = useRouter();
   const pathname = usePathname();
@@ -22,6 +25,8 @@ export function FilterBar({ sources }: FilterBarProps) {
 
   function updateParams(patch: Record<string, string>) {
     const params = new URLSearchParams(searchParams.toString());
+    // Any filter change resets pagination back to the default page size.
+    params.delete("limit");
     for (const [key, value] of Object.entries(patch)) {
       if (value) params.set(key, value);
       else params.delete(key);
@@ -51,14 +56,14 @@ export function FilterBar({ sources }: FilterBarProps) {
         value={query}
         onChange={(e) => setQuery(e.target.value)}
         placeholder="Søk i tittel og sammendrag…"
-        className="w-full sm:w-72 rounded-md border border-card-border bg-card px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-sky-500/40"
+        className={`w-full sm:w-72 ${fieldClass}`}
       />
 
       <div className="flex flex-wrap gap-2">
         <select
           value={category}
           onChange={(e) => updateParams({ category: e.target.value })}
-          className="rounded-md border border-card-border bg-card px-3 py-2 text-sm"
+          className={fieldClass}
         >
           <option value="">Alle kategorier</option>
           {ALL_CATEGORIES.map((c) => (
@@ -71,7 +76,7 @@ export function FilterBar({ sources }: FilterBarProps) {
         <select
           value={source}
           onChange={(e) => updateParams({ source: e.target.value })}
-          className="rounded-md border border-card-border bg-card px-3 py-2 text-sm"
+          className={fieldClass}
         >
           <option value="">Alle kilder</option>
           {sources.map((name) => (
@@ -87,7 +92,7 @@ export function FilterBar({ sources }: FilterBarProps) {
               setQuery("");
               updateParams({ category: "", source: "", q: "" });
             }}
-            className="rounded-md px-3 py-2 text-sm text-muted hover:text-foreground"
+            className="rounded-md px-3 py-2 text-sm text-muted hover:text-foreground transition-colors"
           >
             Nullstill
           </button>
