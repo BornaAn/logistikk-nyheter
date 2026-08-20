@@ -5,7 +5,7 @@ import { extractArticleText } from "./extract";
 import { summarizeArticle } from "./summarize";
 
 // Cost/safety controls for the Claude API step.
-const MAX_SUMMARIES_PER_RUN = 30;
+const MAX_SUMMARIES_PER_RUN = 60;
 const MAX_ARTICLE_AGE_HOURS_FOR_SUMMARY = 24 * 7; // don't burn quota backfilling very old items
 const RAW_EXCERPT_MAX_LENGTH = 20000;
 
@@ -13,8 +13,12 @@ const RAW_EXCERPT_MAX_LENGTH = 20000;
 // many new articles we create per run keeps each cron invocation well
 // within a serverless function's time limit. A large backlog (e.g. the
 // very first run) just gets picked up gradually over the next few runs,
-// since already-seen URLs are skipped on every pass.
-const MAX_NEW_ARTICLES_PER_RUN = 30;
+// since already-seen URLs are skipped on every pass. A first production
+// run at 30/30 completed successfully well past the 280s a client-side
+// curl waited on, so this is raised to 60/60 for better same-day coverage
+// across 14 sources on the once-daily cron — revisit if a run ever times
+// out (check Vercel's function logs for the /api/cron invocation).
+const MAX_NEW_ARTICLES_PER_RUN = 60;
 
 export interface IngestResult {
   sourcesOk: number;

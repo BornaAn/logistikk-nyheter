@@ -6,6 +6,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ALL_CATEGORIES } from "@/lib/categories";
 import { formatRelativeTime } from "@/lib/format";
+import { enabledSources } from "@/lib/sources";
 import type { Category } from "@prisma/client";
 
 const PAGE_SIZE = 40;
@@ -69,13 +70,14 @@ export default async function Home({ searchParams }: PageProps) {
       : {}),
   };
 
-  const [articles, total, sourceNames, lastRun] = await Promise.all([
+  const [articles, total, allTimeTotal, sourceNames, lastRun] = await Promise.all([
     prisma.article.findMany({
       where,
       orderBy: { publishedAt: "desc" },
       take: limit,
     }),
     prisma.article.count({ where }),
+    prisma.article.count({ where: { aiSummary: { not: null } } }),
     prisma.article.findMany({
       where: { aiSummary: { not: null } },
       distinct: ["sourceName"],
@@ -84,6 +86,8 @@ export default async function Home({ searchParams }: PageProps) {
     }),
     prisma.fetchLog.findFirst({ orderBy: { runAt: "desc" } }),
   ]);
+
+  const activeSourceCount = enabledSources().length;
 
   const cards: ArticleCardData[] = articles.map((a) => ({
     id: a.id,
@@ -107,6 +111,14 @@ export default async function Home({ searchParams }: PageProps) {
   return (
     <>
       <header className="sticky top-0 z-10 border-b border-card-border bg-background/90 backdrop-blur supports-backdrop-blur:bg-background/70">
+        <div
+          className="h-[3px] w-full"
+          style={{
+            background:
+              "linear-gradient(to right, var(--accent), #c2660a)",
+          }}
+          aria-hidden
+        />
         <div className="mx-auto w-full max-w-3xl px-4 py-4">
           <div className="flex items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
@@ -116,9 +128,10 @@ export default async function Home({ searchParams }: PageProps) {
                   Logistikknyheter
                 </h1>
                 <p className="text-xs text-muted mt-1">
+                  {allTimeTotal} saker · {activeSourceCount} aktive kilder ·{" "}
                   {lastRun
-                    ? `Sist oppdatert ${formatRelativeTime(lastRun.runAt)}`
-                    : "Venter på første oppdatering"}
+                    ? `sist oppdatert ${formatRelativeTime(lastRun.runAt)}`
+                    : "venter på første oppdatering"}
                 </p>
               </div>
             </div>
@@ -146,8 +159,14 @@ export default async function Home({ searchParams }: PageProps) {
               Viser {cards.length} av {total} {total === 1 ? "sak" : "saker"}
             </p>
             <div className="flex flex-col gap-4">
-              {cards.map((article) => (
-                <ArticleCard key={article.id} article={article} />
+              {cards.map((article, i) => (
+                <div
+                  key={article.id}
+                  className="animate-fade-up"
+                  style={{ animationDelay: `${Math.min(i * 40, 400)}ms` }}
+                >
+                  <ArticleCard article={article} />
+                </div>
               ))}
             </div>
 
@@ -155,7 +174,7 @@ export default async function Home({ searchParams }: PageProps) {
               <div className="mt-6 flex justify-center">
                 <Link
                   href={`/?${moreParams.toString()}`}
-                  className="rounded-md border border-card-border bg-card px-4 py-2 text-sm font-medium hover:border-accent hover:text-accent transition-colors"
+                  className="rounded-md border border-card-border bg-card px-4 py-2 text-sm font-medium hover:border-accent hover:text-accent transition-all active:scale-95"
                 >
                   Last inn flere
                 </Link>

@@ -1,3 +1,18 @@
+/** Cuts text to roughly `maxLength` chars at a word boundary, for a teaser. */
+export function excerpt(text: string, maxLength = 130): string {
+  if (text.length <= maxLength) return text;
+  const cut = text.slice(0, maxLength);
+  const lastSpace = cut.lastIndexOf(" ");
+  return `${cut.slice(0, lastSpace > 0 ? lastSpace : maxLength)}…`;
+}
+
+/** Rough reading-time estimate for a short AI summary, Norwegian label. */
+export function readingTime(text: string): string {
+  const words = text.trim().split(/\s+/).filter(Boolean).length;
+  const minutes = Math.max(1, Math.round(words / 200));
+  return `~${minutes} min lesing`;
+}
+
 export function formatRelativeTime(iso: string | Date): string {
   const date = typeof iso === "string" ? new Date(iso) : iso;
   const diffMs = Date.now() - date.getTime();

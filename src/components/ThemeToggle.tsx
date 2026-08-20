@@ -23,7 +23,7 @@ export function ThemeToggle() {
     <button
       onClick={toggle}
       aria-label="Bytt mellom mørkt og lyst tema"
-      className="rounded-md border border-card-border px-3 py-1.5 text-sm text-foreground/80 hover:text-accent hover:border-accent transition-colors shrink-0"
+      className="rounded-md border border-card-border px-3 py-1.5 text-sm text-foreground/80 hover:text-accent hover:border-accent transition-all active:scale-95 shrink-0"
     >
       {isDark === null ? "Tema" : isDark ? "☀︎ Lyst" : "☾ Mørkt"}
     </button>

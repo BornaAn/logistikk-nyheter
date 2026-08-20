@@ -116,11 +116,11 @@ helt automatisk hvert døgn, uten at du trenger å gjøre noe.
 - **Én kjøring i døgnet** betyr at jobben har et fast tak på antall nye
   artikler og sammendrag den rekker per kjøring (`MAX_NEW_ARTICLES_PER_RUN` /
   `MAX_SUMMARIES_PER_RUN` i [`src/lib/ingest.ts`](src/lib/ingest.ts), satt til
-  30/30 — testet til å ta under 20 sekunder). Med 14 aktive kilder kan det i
-  perioder komme mer enn 30 nye saker på ett døgn, og da henger jobben litt
-  etter til neste dag tar resten. Vil du ha alt med samme dag, er neste steg
-  enten å øke grensene (krever mer funksjonstid enn Hobby-planen gir) eller
-  gå til Vercel Pro med hyppigere cron.
+  60/60). Med 14 aktive kilder kan det i perioder komme mer enn 60 nye saker
+  på ett døgn, og da henger jobben litt etter til neste dag tar resten. Vil
+  du ha alt med samme dag, er neste steg enten å øke grensene enda mer
+  (risikerer å treffe Vercel sin function-tidsgrense) eller gå til Vercel
+  Pro med hyppigere cron.
 - Alle allerede lagrede artikler (samme `articleUrl`) hentes eller
   oppsummeres aldri på nytt, uansett hvor sjelden jobben kjører.
 - Innhentingen går i rundgang mellom kildene (ett kandidatforslag fra hver
@@ -169,7 +169,7 @@ egne ord, konkrete fakta, og en kategori fra listen: `shipping`, `trucking`,
 `lager_forsyningskjede`, `norge`, `globalt_geopolitikk`. Svaret hentes ut
 strukturert via tool-calling, ikke ved å parse fritekst.
 
-Kostnadskontroll: maks 30 sammendrag per cron-kjøring, og artikler eldre enn
+Kostnadskontroll: maks 60 sammendrag per cron-kjøring, og artikler eldre enn
 7 dager blir aldri sendt til sammendrag (bare lagret rått med
 `summaryStatus: "pending"` for alltid — de vises ikke i UI siden UI kun
 viser artikler med et ferdig sammendrag).

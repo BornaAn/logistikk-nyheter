@@ -2,7 +2,7 @@
 
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { useEffect, useRef, useState, useTransition } from "react";
-import { ALL_CATEGORIES, CATEGORY_LABELS } from "@/lib/categories";
+import { ALL_CATEGORIES, CATEGORY_LABELS, CATEGORY_STYLES } from "@/lib/categories";
 
 interface FilterBarProps {
   sources: string[];
@@ -50,53 +50,73 @@ export function FilterBar({ sources }: FilterBarProps) {
   }, [query]);
 
   return (
-    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-      <input
-        type="search"
-        value={query}
-        onChange={(e) => setQuery(e.target.value)}
-        placeholder="Søk i tittel og sammendrag…"
-        className={`w-full sm:w-72 ${fieldClass}`}
-      />
-
+    <div className="flex flex-col gap-3">
       <div className="flex flex-wrap gap-2">
-        <select
-          value={category}
-          onChange={(e) => updateParams({ category: e.target.value })}
-          className={fieldClass}
+        <button
+          onClick={() => updateParams({ category: "" })}
+          className={`rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all active:scale-95 ${
+            category === ""
+              ? "bg-accent border-accent text-accent-foreground"
+              : "border-card-border text-muted hover:border-accent hover:text-accent"
+          }`}
         >
-          <option value="">Alle kategorier</option>
-          {ALL_CATEGORIES.map((c) => (
-            <option key={c} value={c}>
+          Alle
+        </button>
+        {ALL_CATEGORIES.map((c) => {
+          const style = CATEGORY_STYLES[c];
+          const active = category === c;
+          return (
+            <button
+              key={c}
+              onClick={() => updateParams({ category: active ? "" : c })}
+              className={`inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-semibold uppercase tracking-wide transition-all active:scale-95 ${
+                active
+                  ? style.chipActive
+                  : "border-card-border text-muted hover:border-accent hover:text-accent"
+              }`}
+            >
+              <span className={`h-1.5 w-1.5 rounded-full ${style.dot}`} aria-hidden />
               {CATEGORY_LABELS[c]}
-            </option>
-          ))}
-        </select>
+            </button>
+          );
+        })}
+      </div>
 
-        <select
-          value={source}
-          onChange={(e) => updateParams({ source: e.target.value })}
-          className={fieldClass}
-        >
-          <option value="">Alle kilder</option>
-          {sources.map((name) => (
-            <option key={name} value={name}>
-              {name}
-            </option>
-          ))}
-        </select>
+      <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+        <input
+          type="search"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          placeholder="Søk i tittel og sammendrag…"
+          className={`w-full sm:w-72 ${fieldClass}`}
+        />
 
-        {(category || source || query) && (
-          <button
-            onClick={() => {
-              setQuery("");
-              updateParams({ category: "", source: "", q: "" });
-            }}
-            className="rounded-md px-3 py-2 text-sm text-muted hover:text-foreground transition-colors"
+        <div className="flex flex-wrap gap-2">
+          <select
+            value={source}
+            onChange={(e) => updateParams({ source: e.target.value })}
+            className={fieldClass}
           >
-            Nullstill
-          </button>
-        )}
+            <option value="">Alle kilder</option>
+            {sources.map((name) => (
+              <option key={name} value={name}>
+                {name}
+              </option>
+            ))}
+          </select>
+
+          {(category || source || query) && (
+            <button
+              onClick={() => {
+                setQuery("");
+                updateParams({ category: "", source: "", q: "" });
+              }}
+              className="rounded-md px-3 py-2 text-sm text-muted hover:text-foreground transition-colors"
+            >
+              Nullstill
+            </button>
+          )}
+        </div>
       </div>
     </div>
   );
