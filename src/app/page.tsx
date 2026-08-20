@@ -55,8 +55,13 @@ function Logo() {
 
 function SidebarHeading({ children }: { children: ReactNode }) {
   return (
-    <h2 className="font-serif text-sm font-bold tracking-wide mb-3 pb-2 border-b-2 border-[var(--gold)]/40 inline-block">
+    <h2 className="font-serif text-sm font-bold tracking-wide mb-2.5 inline-block">
       {children}
+      <span
+        className="block h-[2px] w-8 mt-1 rounded-full"
+        style={{ background: "linear-gradient(to right, var(--accent), var(--gold))" }}
+        aria-hidden
+      />
     </h2>
   );
 }
@@ -153,7 +158,13 @@ export default async function Home({ searchParams }: PageProps) {
             <div className="flex items-center gap-3">
               <Logo />
               <div>
-                <h1 className="font-serif text-lg sm:text-xl font-bold tracking-tight leading-none">
+                <h1
+                  className="font-serif text-lg sm:text-xl font-bold tracking-tight leading-none bg-clip-text text-transparent"
+                  style={{
+                    backgroundImage:
+                      "linear-gradient(90deg, var(--foreground), var(--accent) 70%, var(--gold))",
+                  }}
+                >
                   Logistikknyheter
                 </h1>
                 <p className="text-xs text-muted mt-1">
@@ -214,61 +225,67 @@ export default async function Home({ searchParams }: PageProps) {
           )}
         </div>
 
-        <aside className="hidden lg:flex flex-col gap-6 sticky top-[132px]">
-          <div className="rounded-lg border border-card-border bg-card card-shadow p-4">
-            <SidebarHeading>Om dekningen</SidebarHeading>
-            <p className="text-sm leading-relaxed text-foreground/80">
-              Samler saker fra {norwegianSources.length} norske og{" "}
-              {internationalSources.length} internasjonale kilder — ulike redaksjoner,
-              ulikt ståsted — og oppsummerer dem nøytralt med Claude, uten å publisere
-              rå tekst fra kildene.
-            </p>
-          </div>
+        <aside className="hidden lg:block sticky top-[124px] max-h-[calc(100vh-140px)] overflow-y-auto pr-0.5">
+          <div className="flex flex-col gap-4">
+            <div className="rounded-lg border border-card-border bg-card card-shadow p-4">
+              <SidebarHeading>Om dekningen</SidebarHeading>
+              <p className="text-sm leading-relaxed text-foreground/80">
+                Laget av Borna. Samler saker fra {norwegianSources.length} norske og{" "}
+                {internationalSources.length} internasjonale kilder — ulike redaksjoner,
+                ulikt ståsted — og oppsummerer dem nøytralt uten å publisere rå tekst
+                fra kildene.
+              </p>
+            </div>
 
-          <div className="rounded-lg border border-card-border bg-card card-shadow p-4">
-            <SidebarHeading>Norske kilder</SidebarHeading>
-            <ul className="flex flex-col gap-1">
-              {norwegianSources.map((s) => (
-                <li key={s.slug}>
-                  <Link
-                    href={sourceLink(s.name)}
-                    className={`flex items-center justify-between gap-2 rounded px-2 py-1.5 text-sm transition-colors ${
-                      source === s.name
-                        ? "bg-accent/10 text-accent font-medium"
-                        : "text-foreground/80 hover:bg-accent/5 hover:text-accent"
-                    }`}
-                  >
-                    <span className="truncate">{s.name}</span>
-                    <span className="text-xs text-muted shrink-0">
-                      {countBySource.get(s.name) ?? 0}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
-          </div>
+            <div className="rounded-lg border border-card-border bg-card card-shadow p-4">
+              <SidebarHeading>Kilder</SidebarHeading>
 
-          <div className="rounded-lg border border-card-border bg-card card-shadow p-4">
-            <SidebarHeading>Internasjonale kilder</SidebarHeading>
-            <ul className="flex flex-col gap-1">
-              {internationalSources.map((s) => (
-                <li key={s.slug}>
-                  <Link
-                    href={sourceLink(s.name)}
-                    className={`flex items-center justify-between gap-2 rounded px-2 py-1.5 text-sm transition-colors ${
-                      source === s.name
-                        ? "bg-accent/10 text-accent font-medium"
-                        : "text-foreground/80 hover:bg-accent/5 hover:text-accent"
-                    }`}
-                  >
-                    <span className="truncate">{s.name}</span>
-                    <span className="text-xs text-muted shrink-0">
-                      {countBySource.get(s.name) ?? 0}
-                    </span>
-                  </Link>
-                </li>
-              ))}
-            </ul>
+              <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted mt-2 mb-1">
+                Norge
+              </p>
+              <ul className="flex flex-col">
+                {norwegianSources.map((s) => (
+                  <li key={s.slug}>
+                    <Link
+                      href={sourceLink(s.name)}
+                      className={`flex items-center justify-between gap-2 rounded px-2 py-1 text-[0.83rem] leading-tight transition-colors ${
+                        source === s.name
+                          ? "bg-accent/10 text-accent font-medium"
+                          : "text-foreground/80 hover:bg-accent/5 hover:text-accent"
+                      }`}
+                    >
+                      <span className="truncate">{s.name}</span>
+                      <span className="text-xs text-muted shrink-0">
+                        {countBySource.get(s.name) ?? 0}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted mt-3 mb-1">
+                Internasjonalt
+              </p>
+              <ul className="flex flex-col">
+                {internationalSources.map((s) => (
+                  <li key={s.slug}>
+                    <Link
+                      href={sourceLink(s.name)}
+                      className={`flex items-center justify-between gap-2 rounded px-2 py-1 text-[0.83rem] leading-tight transition-colors ${
+                        source === s.name
+                          ? "bg-accent/10 text-accent font-medium"
+                          : "text-foreground/80 hover:bg-accent/5 hover:text-accent"
+                      }`}
+                    >
+                      <span className="truncate">{s.name}</span>
+                      <span className="text-xs text-muted shrink-0">
+                        {countBySource.get(s.name) ?? 0}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
           </div>
         </aside>
       </div>

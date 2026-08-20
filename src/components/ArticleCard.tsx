@@ -42,11 +42,16 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
   const isShort = teaser === article.aiSummary;
 
   return (
-    <article
-      className={`group rounded-lg border border-card-border bg-card card-shadow card-shadow-hover border-l-4 transition-all duration-300 hover:-translate-y-0.5 ${
-        style ? style.border : "border-l-card-border"
-      }`}
-    >
+    <article className="group relative overflow-hidden rounded-lg border border-card-border bg-card card-shadow card-shadow-hover transition-all duration-300 hover:-translate-y-0.5">
+      <div
+        className="absolute inset-y-0 left-0 w-[5px]"
+        style={{
+          background: style
+            ? `linear-gradient(180deg, ${style.gradientFrom}, var(--gold))`
+            : "var(--card-border)",
+        }}
+        aria-hidden
+      />
       <button
         type="button"
         onClick={() => setExpanded((v) => !v)}
