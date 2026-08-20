@@ -129,15 +129,40 @@ async function runSummaryQueue(): Promise<{
     Date.now() - MAX_ARTICLE_AGE_HOURS_FOR_SUMMARY * 60 * 60 * 1000,
   );
 
-  const pending = await prisma.article.findMany({
+  // Pull more candidates than the cap so the round-robin below has enough
+  // per-source depth to draw from — a flat `take: MAX_SUMMARIES_PER_RUN`
+  // ordered by publishedAt would let a high-frequency source's newest items
+  // crowd out everything else, the same fairness bug as article creation.
+  const candidates = await prisma.article.findMany({
     where: {
       summaryStatus: "pending",
       publishedAt: { gte: cutoff },
       rawExcerpt: { not: null },
     },
     orderBy: { publishedAt: "desc" },
-    take: MAX_SUMMARIES_PER_RUN,
+    take: MAX_SUMMARIES_PER_RUN * 6,
   });
+
+  const bySource = new Map<string, typeof candidates>();
+  for (const article of candidates) {
+    const list = bySource.get(article.sourceName) ?? [];
+    list.push(article);
+    bySource.set(article.sourceName, list);
+  }
+  const queues = [...bySource.values()];
+
+  const pending: typeof candidates = [];
+  let progressed = true;
+  while (pending.length < MAX_SUMMARIES_PER_RUN && progressed) {
+    progressed = false;
+    for (const queue of queues) {
+      if (pending.length >= MAX_SUMMARIES_PER_RUN) break;
+      const article = queue.shift();
+      if (!article) continue;
+      progressed = true;
+      pending.push(article);
+    }
+  }
 
   let ok = 0;
   let failed = 0;
@@ -196,17 +221,24 @@ export async function runIngest(): Promise<IngestResult> {
     errors: [...fetchResult.errors, ...summaryResult.errors],
   };
 
-  await prisma.fetchLog.create({
-    data: {
-      sourcesOk: result.sourcesOk,
-      sourcesFailed: result.sourcesFailed,
-      articlesFound: result.articlesFound,
-      articlesNew: result.articlesNew,
-      summariesOk: result.summariesOk,
-      summariesFailed: result.summariesFailed,
-      errors: result.errors.length ? result.errors.join("\n") : null,
-    },
-  });
+  try {
+    // A logging failure (e.g. a dropped connection after a long run)
+    // shouldn't turn an otherwise-successful ingest into an error response —
+    // every article was already committed above.
+    await prisma.fetchLog.create({
+      data: {
+        sourcesOk: result.sourcesOk,
+        sourcesFailed: result.sourcesFailed,
+        articlesFound: result.articlesFound,
+        articlesNew: result.articlesNew,
+        summariesOk: result.summariesOk,
+        summariesFailed: result.summariesFailed,
+        errors: result.errors.length ? result.errors.join("\n") : null,
+      },
+    });
+  } catch (err) {
+    result.errors.push(`Kunne ikke lagre FetchLog: ${(err as Error).message}`);
+  }
 
   return result;
 }
