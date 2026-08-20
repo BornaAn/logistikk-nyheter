@@ -1,0 +1,11 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "logistikk-dev",
+      "runtimeExecutable": "/Users/borna/Documents/CLAUDE LOG/.claude/dev-with-path.sh",
+      "runtimeArgs": [],
+      "port": 3000
+    }
+  ]
+}

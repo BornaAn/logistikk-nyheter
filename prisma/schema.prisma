@@ -1,0 +1,75 @@
+// Prisma schema for the logistics news aggregator
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum Category {
+  shipping
+  trucking
+  lager_forsyningskjede
+  norge
+  globalt_geopolitikk
+}
+
+enum AccessLevel {
+  full
+  limited
+}
+
+enum SummaryStatus {
+  pending
+  done
+  failed
+}
+
+model Article {
+  id String @id @default(cuid())
+
+  title      String
+  sourceName String
+  sourceUrl  String
+  articleUrl String @unique
+
+  publishedAt DateTime
+  fetchedAt   DateTime @default(now())
+
+  // Raw content pulled from the source (RSS description or scraped/extracted
+  // article body). Internal only — never rendered in the UI, kept for
+  // debugging and as the input to the summarizer.
+  rawExcerpt String?
+
+  // AI-generated summary actually shown in the UI.
+  aiSummary String?
+
+  category    Category?
+  accessLevel AccessLevel @default(full)
+
+  summaryStatus SummaryStatus @default(pending)
+  summaryError  String?
+  summarizedAt  DateTime?
+
+  createdAt DateTime @updatedAt
+
+  @@index([publishedAt])
+  @@index([category])
+  @@index([sourceName])
+  @@index([summaryStatus])
+}
+
+model FetchLog {
+  id        String   @id @default(cuid())
+  runAt     DateTime @default(now())
+  sourcesOk Int
+  sourcesFailed Int
+  articlesFound Int
+  articlesNew   Int
+  summariesOk   Int
+  summariesFailed Int
+  errors    String?
+}
