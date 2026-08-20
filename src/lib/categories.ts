@@ -19,41 +19,44 @@ interface CategoryStyle {
   chipActive: string;
 }
 
+// Hand-picked jewel tones (not the default Tailwind palette) so category
+// color-coding reads as a deliberate editorial system rather than generic
+// UI-kit swatches.
 export const CATEGORY_STYLES: Record<Category, CategoryStyle> = {
   shipping: {
-    dot: "bg-teal-600 dark:bg-teal-400",
-    text: "text-teal-800 dark:text-teal-300",
-    border: "border-teal-500 dark:border-teal-400",
+    dot: "bg-[#0a4a55] dark:bg-[#3fb2c2]",
+    text: "text-[#0a4a55] dark:text-[#5fc4d2]",
+    border: "border-[#0a4a55] dark:border-[#3fb2c2]",
     chipActive:
-      "bg-teal-600/10 border-teal-600 text-teal-800 dark:bg-teal-400/10 dark:border-teal-400 dark:text-teal-300",
+      "bg-[#0a4a55]/10 border-[#0a4a55] text-[#0a4a55] dark:bg-[#3fb2c2]/10 dark:border-[#3fb2c2] dark:text-[#5fc4d2]",
   },
   trucking: {
-    dot: "bg-amber-600 dark:bg-amber-400",
-    text: "text-amber-800 dark:text-amber-300",
-    border: "border-amber-500 dark:border-amber-400",
+    dot: "bg-[#a04a1f] dark:bg-[#e2884f]",
+    text: "text-[#a04a1f] dark:text-[#e2884f]",
+    border: "border-[#a04a1f] dark:border-[#e2884f]",
     chipActive:
-      "bg-amber-600/10 border-amber-600 text-amber-800 dark:bg-amber-400/10 dark:border-amber-400 dark:text-amber-300",
+      "bg-[#a04a1f]/10 border-[#a04a1f] text-[#a04a1f] dark:bg-[#e2884f]/10 dark:border-[#e2884f] dark:text-[#e2884f]",
   },
   lager_forsyningskjede: {
-    dot: "bg-emerald-700 dark:bg-emerald-400",
-    text: "text-emerald-800 dark:text-emerald-300",
-    border: "border-emerald-600 dark:border-emerald-400",
+    dot: "bg-[#1f6f4a] dark:bg-[#4fbf8a]",
+    text: "text-[#1f6f4a] dark:text-[#4fbf8a]",
+    border: "border-[#1f6f4a] dark:border-[#4fbf8a]",
     chipActive:
-      "bg-emerald-700/10 border-emerald-700 text-emerald-800 dark:bg-emerald-400/10 dark:border-emerald-400 dark:text-emerald-300",
+      "bg-[#1f6f4a]/10 border-[#1f6f4a] text-[#1f6f4a] dark:bg-[#4fbf8a]/10 dark:border-[#4fbf8a] dark:text-[#4fbf8a]",
   },
   norge: {
-    dot: "bg-red-700 dark:bg-red-400",
-    text: "text-red-800 dark:text-red-300",
-    border: "border-red-600 dark:border-red-400",
+    dot: "bg-[#a8202f] dark:bg-[#e2596a]",
+    text: "text-[#a8202f] dark:text-[#e2596a]",
+    border: "border-[#a8202f] dark:border-[#e2596a]",
     chipActive:
-      "bg-red-700/10 border-red-700 text-red-800 dark:bg-red-400/10 dark:border-red-400 dark:text-red-300",
+      "bg-[#a8202f]/10 border-[#a8202f] text-[#a8202f] dark:bg-[#e2596a]/10 dark:border-[#e2596a] dark:text-[#e2596a]",
   },
   globalt_geopolitikk: {
-    dot: "bg-violet-700 dark:bg-violet-400",
-    text: "text-violet-800 dark:text-violet-300",
-    border: "border-violet-600 dark:border-violet-400",
+    dot: "bg-[#5b3f8f] dark:bg-[#a487d6]",
+    text: "text-[#5b3f8f] dark:text-[#a487d6]",
+    border: "border-[#5b3f8f] dark:border-[#a487d6]",
     chipActive:
-      "bg-violet-700/10 border-violet-700 text-violet-800 dark:bg-violet-400/10 dark:border-violet-400 dark:text-violet-300",
+      "bg-[#5b3f8f]/10 border-[#5b3f8f] text-[#5b3f8f] dark:bg-[#a487d6]/10 dark:border-[#a487d6] dark:text-[#a487d6]",
   },
 };
 

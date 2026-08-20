@@ -3,23 +3,27 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 :root {
-  --background: #f6f4ee;
-  --foreground: #1b1a17;
+  --background: #f4f0e6;
+  --foreground: #15130f;
   --card: #ffffff;
-  --card-border: #e3ddcf;
-  --muted: #6b6355;
-  --accent: #0e6b78;
+  --card-border: #e2d8bf;
+  --muted: #746a53;
+  --accent: #0a4a55;
   --accent-foreground: #ffffff;
+  --gold: #9c7218;
+  --shadow-color: 30 25% 55%;
 }
 
 .dark {
-  --background: #0c1118;
-  --foreground: #e9e7e0;
-  --card: #131a24;
-  --card-border: #26303e;
-  --muted: #93927f;
-  --accent: #4fb6c4;
-  --accent-foreground: #08181c;
+  --background: #080b10;
+  --foreground: #ece6d6;
+  --card: #10151d;
+  --card-border: #232c3a;
+  --muted: #8f886e;
+  --accent: #3fb2c2;
+  --accent-foreground: #06141a;
+  --gold: #d9ab4e;
+  --shadow-color: 190 60% 3%;
 }
 
 @theme inline {
@@ -30,6 +34,7 @@
   --color-muted: var(--muted);
   --color-accent: var(--accent);
   --color-accent-foreground: var(--accent-foreground);
+  --color-gold: var(--gold);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-serif: var(--font-source-serif);
@@ -39,6 +44,24 @@ body {
   background: var(--background);
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
+  background-image: radial-gradient(
+    circle at 1px 1px,
+    color-mix(in srgb, var(--foreground) 6%, transparent) 1px,
+    transparent 0
+  );
+  background-size: 24px 24px;
+}
+
+.card-shadow {
+  box-shadow:
+    0 1px 2px hsl(var(--shadow-color) / 0.06),
+    0 6px 16px -4px hsl(var(--shadow-color) / 0.1);
+}
+
+.card-shadow-hover:hover {
+  box-shadow:
+    0 2px 4px hsl(var(--shadow-color) / 0.08),
+    0 12px 28px -6px hsl(var(--shadow-color) / 0.16);
 }
 
 @keyframes fade-up {

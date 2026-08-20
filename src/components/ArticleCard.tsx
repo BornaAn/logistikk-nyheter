@@ -43,7 +43,7 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
 
   return (
     <article
-      className={`group rounded-lg border border-card-border bg-card shadow-sm border-l-4 transition-all duration-300 hover:shadow-md hover:-translate-y-0.5 ${
+      className={`group rounded-lg border border-card-border bg-card card-shadow card-shadow-hover border-l-4 transition-all duration-300 hover:-translate-y-0.5 ${
         style ? style.border : "border-l-card-border"
       }`}
     >
