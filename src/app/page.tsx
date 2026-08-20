@@ -97,7 +97,15 @@ export default async function Home({ searchParams }: PageProps) {
       where: { aiSummary: { not: null } },
       _count: true,
     }),
-    prisma.fetchLog.findFirst({ orderBy: { runAt: "desc" } }),
+    // Sourced from Article.fetchedAt rather than FetchLog: every successful
+    // article write updates this reliably, whereas the FetchLog row is only
+    // written once at the very end of a run and can be lost if the
+    // connection drops on a long-running invocation (the ingest itself
+    // still succeeds either way — see src/lib/ingest.ts).
+    prisma.article.findFirst({
+      orderBy: { fetchedAt: "desc" },
+      select: { fetchedAt: true },
+    }),
   ]);
 
   const countBySource = new Map(sourceCounts.map((s) => [s.sourceName, s._count]));
@@ -151,7 +159,7 @@ export default async function Home({ searchParams }: PageProps) {
                 <p className="text-xs text-muted mt-1">
                   {allTimeTotal} saker · {activeSources.length} aktive kilder ·{" "}
                   {lastRun
-                    ? `sist oppdatert ${formatRelativeTime(lastRun.runAt)}`
+                    ? `sist oppdatert ${formatRelativeTime(lastRun.fetchedAt)}`
                     : "venter på første oppdatering"}
                 </p>
               </div>
