@@ -1,33 +1,46 @@
+-- CreateEnum
+CREATE TYPE "Category" AS ENUM ('shipping', 'trucking', 'lager_forsyningskjede', 'norge', 'globalt_geopolitikk');
+
+-- CreateEnum
+CREATE TYPE "AccessLevel" AS ENUM ('full', 'limited');
+
+-- CreateEnum
+CREATE TYPE "SummaryStatus" AS ENUM ('pending', 'done', 'failed');
+
 -- CreateTable
 CREATE TABLE "Article" (
-    "id" TEXT NOT NULL PRIMARY KEY,
+    "id" TEXT NOT NULL,
     "title" TEXT NOT NULL,
     "sourceName" TEXT NOT NULL,
     "sourceUrl" TEXT NOT NULL,
     "articleUrl" TEXT NOT NULL,
-    "publishedAt" DATETIME NOT NULL,
-    "fetchedAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "publishedAt" TIMESTAMP(3) NOT NULL,
+    "fetchedAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "rawExcerpt" TEXT,
     "aiSummary" TEXT,
-    "category" TEXT,
-    "accessLevel" TEXT NOT NULL DEFAULT 'full',
-    "summaryStatus" TEXT NOT NULL DEFAULT 'pending',
+    "category" "Category",
+    "accessLevel" "AccessLevel" NOT NULL DEFAULT 'full',
+    "summaryStatus" "SummaryStatus" NOT NULL DEFAULT 'pending',
     "summaryError" TEXT,
-    "summarizedAt" DATETIME,
-    "createdAt" DATETIME NOT NULL
+    "summarizedAt" TIMESTAMP(3),
+    "createdAt" TIMESTAMP(3) NOT NULL,
+
+    CONSTRAINT "Article_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateTable
 CREATE TABLE "FetchLog" (
-    "id" TEXT NOT NULL PRIMARY KEY,
-    "runAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    "id" TEXT NOT NULL,
+    "runAt" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
     "sourcesOk" INTEGER NOT NULL,
     "sourcesFailed" INTEGER NOT NULL,
     "articlesFound" INTEGER NOT NULL,
     "articlesNew" INTEGER NOT NULL,
     "summariesOk" INTEGER NOT NULL,
     "summariesFailed" INTEGER NOT NULL,
-    "errors" TEXT
+    "errors" TEXT,
+
+    CONSTRAINT "FetchLog_pkey" PRIMARY KEY ("id")
 );
 
 -- CreateIndex

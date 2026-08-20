@@ -22,8 +22,13 @@ forsiden (src/app/page.tsx)
   → filter på kategori/kilde + søk går via URL-parametre
 ```
 
-Databasen (SQLite via Prisma) har to tabeller: `Article` (selve sakene) og
-`FetchLog` (én rad per cron-kjøring, til feilsøking).
+Databasen (Postgres via Prisma, hostet på Vercel/Neon) har to tabeller:
+`Article` (selve sakene) og `FetchLog` (én rad per cron-kjøring, til
+feilsøking). Lokal utvikling og produksjon bruker samme database — enklest
+for et lite prosjekt som dette, men det betyr at lokale testkjøringer også
+skriver til den samme databasen som vises på den offentlige siden. Vil du
+ha en egen database til lokal utvikling, opprett en ny gratis Neon/Vercel
+Postgres-database og bruk den `DATABASE_URL`-en lokalt i stedet.
 
 ## Kom i gang lokalt
 
@@ -35,11 +40,13 @@ cp .env.example .env
 ```
 
 Fyll inn i `.env`:
+- `DATABASE_URL` — Postgres-tilkoblingsstrengen (samme som i Vercel, se
+  Storage-fanen i prosjektet, eller en egen dev-database)
 - `ANTHROPIC_API_KEY` — nøkkel fra [console.anthropic.com](https://console.anthropic.com/)
 - `CRON_SECRET` — valgfri lokalt (la stå tom), men sett en verdi før du deployer
 
 ```bash
-npx prisma migrate dev   # oppretter dev.db og tabellene
+npx prisma migrate dev   # oppretter tabellene i databasen (kun nødvendig første gang / ved skjemaendringer)
 npm run dev
 ```
 
@@ -53,12 +60,6 @@ curl http://localhost:3000/api/cron
 Kjør den samme kommandoen på nytt når som helst for å hente nye saker —
 allerede lagrede artikler (samme `articleUrl`) blir aldri hentet eller
 oppsummert to ganger.
-
-**Merk om SQLite og macOS:** hvis du kjører prosjektet fra en mappe under
-`~/Documents` (som her) og får `SQLite database error: attempt to write a
-readonly database`, skyldes det som regel sandboxing/TCC-begrensninger i
-terminalen/verktøyet du bruker, ikke koden selv — kjør fra en vanlig
-Terminal-økt, eller flytt prosjektet ut av `~/Documents`.
 
 ## Deploy (gratis Vercel Hobby-plan, én kjøring i døgnet)
 
@@ -87,9 +88,10 @@ ekte hostet database. Enklest siden du uansett oppretter Vercel-konto:
 3. Under prosjektets **Storage**-fane: Create Database → Postgres (drives av
    Neon, gratis nivå er mer enn nok her). Koble den til prosjektet — Vercel
    setter da `DATABASE_URL` automatisk som miljøvariabel.
-4. Si ifra når dette er gjort, så bytter jeg `provider` i
-   [`prisma/schema.prisma`](prisma/schema.prisma) fra `sqlite` til
-   `postgresql` og lager en ny migrasjon tilpasset Postgres.
+
+`build`-scriptet i `package.json` kjører `prisma migrate deploy` før
+`next build` ved hver deploy, så nye databasetabeller/-endringer ruller ut
+automatisk uten manuelle steg.
 
 *(Alternativ: [Supabase](https://supabase.com/) hvis du heller vil ha
 databasen hos en annen leverandør enn Vercel — samme fremgangsmåte, bare at
