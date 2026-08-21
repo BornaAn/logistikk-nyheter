@@ -15,8 +15,12 @@ const SYSTEM_PROMPT = `Du oppsummerer en nyhetsartikkel om logistikk/frakt/hande
 
 Reglene er strenge:
 - Skriv KUN i egne ord — aldri kopier setninger eller fraser direkte fra kildeteksten.
-- Ta med konkrete fakta: hvem/hva/hvor/når, tall, beløp, årsak og konsekvens hvis det finnes.
-- 4–8 setninger, nøytral og saklig tone, ingen synsing.
+- Ta med konkrete fakta: hvem/hva/hvor/når, tall, beløp, årsak og konsekvens hvis det finnes i kildeteksten.
+- ALDRI dikt opp fakta, detaljer eller antakelser som ikke faktisk står i den uthentede teksten — heller ikke basert på hva du måtte vite om saken fra andre kilder. Sammendraget skal bygge utelukkende på den oppgitte teksten.
+- Automatisk uthenting fra nettsider feiler av og til og gir feil tekst — f.eks. en helt annen artikkel fra samme nettside. Sjekk derfor at den uthentede teksten faktisk handler om samme sak som tittelen antyder.
+- Sett "sufficientContent" til false hvis: (a) teksten ikke handler om samme sak som tittelen, eller (b) teksten er for tynn/generisk (f.eks. bare en betalingsmur-/innloggingsmelding) til å lage et pålitelig sammendrag. Skriv da i stedet én kort, ærlig setning om at innholdet ikke var tilgjengelig — ikke fyll ut med gjetning.
+- Når "sufficientContent" er true: skriv 4–8 setninger hvis kildeteksten har nok stoff til det, men det er helt greit med færre setninger enn 4 hvis teksten er ekte og relevant men kort — skriv bare det teksten faktisk støtter.
+- Nøytral og saklig tone, ingen synsing.
 - Skriv på norsk, selv om kildeartikkelen er på engelsk.
 - Ikke inkluder egen mening eller "AI-kommentarer" — bare oppsummer sakens innhold.
 - Avslutt IKKE med en oppfordring om å lese hele artikkelen — det håndterer nettsiden selv.
@@ -45,6 +49,9 @@ export interface SummarizeInput {
 export interface SummarizeResult {
   summary: string;
   category: Category;
+  /** False if the extracted text didn't actually match the title, or was
+   * too thin/generic (e.g. a paywall wall) to summarize reliably. */
+  sufficientContent: boolean;
 }
 
 const SUMMARY_TOOL: Anthropic.Tool = {
@@ -53,9 +60,15 @@ const SUMMARY_TOOL: Anthropic.Tool = {
   input_schema: {
     type: "object",
     properties: {
+      sufficientContent: {
+        type: "boolean",
+        description:
+          "false hvis kildeteksten ikke handler om samme sak som tittelen, eller er for tynn/generisk til å oppsummeres pålitelig.",
+      },
       summary: {
         type: "string",
-        description: "4-8 setninger, på norsk, i egne ord.",
+        description:
+          "På norsk, i egne ord. 4-8 setninger normalt, færre er greit for en kort men ekte kilde. Én kort, ærlig setning hvis sufficientContent er false.",
       },
       category: {
         type: "string",
@@ -63,7 +76,7 @@ const SUMMARY_TOOL: Anthropic.Tool = {
         description: "Den kategorien som passer artikkelen best.",
       },
     },
-    required: ["summary", "category"],
+    required: ["sufficientContent", "summary", "category"],
   },
 };
 
@@ -96,15 +109,20 @@ export async function summarizeArticle(
     throw new Error("Claude returnerte ikke et strukturert sammendrag");
   }
 
-  const parsed = toolUse.input as { summary?: unknown; category?: unknown };
+  const parsed = toolUse.input as {
+    summary?: unknown;
+    category?: unknown;
+    sufficientContent?: unknown;
+  };
   const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
   const category = CATEGORIES.includes(parsed.category as Category)
     ? (parsed.category as Category)
     : "globalt_geopolitikk";
+  const sufficientContent = parsed.sufficientContent !== false;
 
   if (!summary) {
     throw new Error("Claude returnerte et tomt sammendrag");
   }
 
-  return { summary, category };
+  return { summary, category, sufficientContent };
 }

@@ -91,7 +91,7 @@ async function ingestNewArticles(): Promise<{
       progressed = true;
 
       try {
-        const extracted = await extractArticleText(item.articleUrl, item.rssText);
+        const extracted = await extractArticleText(item.articleUrl, item.title, item.rssText);
         const isLimited = Boolean(source.paywalled) || !extracted.isFullText;
 
         await prisma.article.create({
@@ -175,6 +175,26 @@ async function runSummaryQueue(): Promise<{
         sourceName: article.sourceName,
         extractedText: article.rawExcerpt ?? "",
       });
+
+      if (!result.sufficientContent) {
+        // Claude itself flagged the extracted text as mismatched with the
+        // title or too thin to summarize reliably (e.g. extraction grabbed
+        // an unrelated "related articles" block, or a paywall wall slipped
+        // through). Don't publish a summary built on bad input — treat it
+        // like any other extraction failure instead.
+        failed++;
+        errors.push(
+          `[${article.sourceName}] "${article.title}": Kildeteksten var utilstrekkelig eller matchet ikke tittelen (${result.summary})`,
+        );
+        await prisma.article.update({
+          where: { id: article.id },
+          data: {
+            summaryStatus: "failed",
+            summaryError: `Utilstrekkelig/feil kildeinnhold: ${result.summary}`,
+          },
+        });
+        continue;
+      }
 
       await prisma.article.update({
         where: { id: article.id },
