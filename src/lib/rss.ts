@@ -37,11 +37,22 @@ export async function fetchFeed(source: Source): Promise<FeedItem[]> {
   for (const item of feed.items) {
     if (!item.link || !item.title) continue;
 
-    const publishedAt = item.isoDate
+    const now = new Date();
+    const rawPublishedAt = item.isoDate
       ? new Date(item.isoDate)
       : item.pubDate
         ? new Date(item.pubDate)
-        : new Date();
+        : now;
+
+    // Some feeds (seen on Transport Topics' sponsored items) report a
+    // publish date days in the future — a bad/placeholder value on their
+    // end. Trusting it would both misrender as "just now" and unfairly
+    // pin the item at the top of the "newest first" sort indefinitely, so
+    // clamp anything after the moment we're fetching it to right now.
+    const publishedAt =
+      Number.isNaN(rawPublishedAt.getTime()) || rawPublishedAt > now
+        ? now
+        : rawPublishedAt;
 
     const rssText = item.contentEncoded
       ? stripHtml(item.contentEncoded)
@@ -50,9 +61,7 @@ export async function fetchFeed(source: Source): Promise<FeedItem[]> {
     items.push({
       title: item.title.trim(),
       articleUrl: item.link.trim(),
-      publishedAt: Number.isNaN(publishedAt.getTime())
-        ? new Date()
-        : publishedAt,
+      publishedAt,
       rssText,
     });
   }

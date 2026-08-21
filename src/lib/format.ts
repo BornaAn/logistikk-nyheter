@@ -16,7 +16,7 @@ export function readingTime(text: string): string {
 export function formatRelativeTime(iso: string | Date): string {
   const date = typeof iso === "string" ? new Date(iso) : iso;
   const diffMs = Date.now() - date.getTime();
-  const diffMin = Math.round(diffMs / 60000);
+  const diffMin = Math.max(0, Math.round(diffMs / 60000));
 
   if (diffMin < 1) return "akkurat nå";
   if (diffMin < 60) return `${diffMin} min siden`;
