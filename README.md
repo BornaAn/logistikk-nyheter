@@ -174,6 +174,35 @@ Kostnadskontroll: maks 60 sammendrag per cron-kjøring, og artikler eldre enn
 `summaryStatus: "pending"` for alltid — de vises ikke i UI siden UI kun
 viser artikler med et ferdig sammendrag).
 
+### Kjent svakhet: sammendrag kan i sjeldne tilfeller beskrive feil sak
+
+Automatisk uthenting av artikkeltekst fra nettsider feiler av og til på en
+måte som ikke gir en åpenbar feilmelding — spesielt på betalingsmur-sider.
+Ett bekreftet tilfelle: på JOC sine artikkelsider plukket
+uthentingsbiblioteket konsekvent opp en "relaterte saker"-boks i stedet for
+selve (tynne, bak betalingsmur) artikkelteksten, slik at sammendraget
+beskrev en helt annen sak enn overskriften antydet.
+
+Tre lag med forsvar mot dette (lagt til etter at et slikt tilfelle ble
+oppdaget i produksjon):
+1. [`src/lib/extract.ts`](src/lib/extract.ts) sjekker at den uthentede
+   teksten faktisk deler minst ett betydningsfullt ord med artikkelens egen
+   tittel, og forkaster kjente betalingsmur-/innloggingsmeldinger — begge
+   tilfeller faller tilbake til kildens egen RSS-beskrivelse i stedet.
+2. Claude får eksplisitt beskjed om aldri å dikte opp fakta utover det som
+   faktisk står i teksten, og returnerer et eget `sufficientContent`-flagg
+   den selv setter til `false` hvis teksten ikke stemmer med tittelen eller
+   er for tynn til å oppsummeres pålitelig.
+3. Når `sufficientContent` er `false`, publiseres saken aldri —
+   `summaryStatus` settes til `failed` i stedet for at et upålitelig
+   sammendrag vises.
+
+Dette reduserer risikoen betydelig, men elimerer den ikke helt — en
+uthentingsfeil kan i prinsippet fortsatt snike seg forbi begge sjekkene.
+**Bruk derfor siden som en inngangsport til sakene, ikke som eneste kilde —
+klikk deg videre til "Les hele saken hos [kilde]" før du bygger et argument
+på noe du har lest i et sammendrag her.**
+
 ## Juridisk
 
 Rå utdrag (`rawExcerpt`) lagres kun for intern bruk/debugging og vises
