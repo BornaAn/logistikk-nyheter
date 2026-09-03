@@ -1,6 +1,8 @@
 import { prisma } from "./prisma";
 import { enabledSources, KEYWORD_FILTER, type Source } from "./sources";
 import { scrapedSources, type ScrapedSource } from "./scrapers";
+
+const INDEX_SOURCE_NAMES = new Set(scrapedSources.map((s) => s.name));
 import { fetchFeed, type FeedItem } from "./rss";
 import { extractArticleText } from "./extract";
 import { summarizeArticle } from "./summarize";
@@ -204,6 +206,7 @@ async function runSummaryQueue(): Promise<{
         title: article.title,
         sourceName: article.sourceName,
         extractedText: article.rawExcerpt ?? "",
+        explainRelevance: INDEX_SOURCE_NAMES.has(article.sourceName),
       });
 
       if (!result.sufficientContent) {

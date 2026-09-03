@@ -44,6 +44,14 @@ export interface SummarizeInput {
   title: string;
   sourceName: string;
   extractedText: string;
+  /**
+   * True for market-index/statistics sources (Drewry, Xeneta, ISM, ...) —
+   * these report numbers and trends without the "why this matters" framing
+   * a normal news article would have, so the prompt asks Claude to add a
+   * short explanation of the practical relevance for logistics/supply
+   * chain work.
+   */
+  explainRelevance?: boolean;
 }
 
 export interface SummarizeResult {
@@ -88,6 +96,11 @@ export async function summarizeArticle(
   const userMessage = [
     `Artikkeltittel: ${input.title}`,
     `Kilde: ${input.sourceName}`,
+    ...(input.explainRelevance
+      ? [
+          `Dette er en markedsindeks-/statistikkilde (tall og markedsdata, ikke en vanlig nyhetsartikkel). Legg til, som siste setning i sammendraget, en kort og konkret forklaring på hvorfor dette tallet/denne trenden er relevant for noen som jobber med eller studerer logistikk/forsyningskjede (f.eks. hva det betyr for fraktkostnader, kapasitetsplanlegging, lagerstyring eller risikovurdering) — kun basert på det som faktisk står i teksten, ikke generell bakgrunnskunnskap.`,
+        ]
+      : []),
     `Uthentet artikkeltekst:`,
     input.extractedText.slice(0, 12000),
   ].join("\n");
