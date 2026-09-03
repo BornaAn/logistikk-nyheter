@@ -220,6 +220,19 @@ export const sources: Source[] = [
     defaultCategory: "globalt_geopolitikk",
     enabled: true,
   },
+  {
+    slug: "ssb-utenriksokonomi",
+    name: "SSB (Utenriksøkonomi)",
+    homepageUrl: "https://www.ssb.no/utenriksokonomi",
+    // SSBs emne-RSS-er er ujevne — mange forsøkte emneslugger (utenrikshandel,
+    // godstransport, sjofart, containertrafikk m.fl.) ga en gyldig, men tom
+    // feed. "utenriksokonomi" er den som faktisk har innhold: reelle
+    // statistikkslipp om handelsbalanse, import/eksport og lakseeksportpriser.
+    feedUrl: "https://www.ssb.no/rss/utenriksokonomi",
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: true,
+  },
 
   // --- Ingen fungerende RSS funnet (se README for detaljer og forslag til løsning) ---
   {

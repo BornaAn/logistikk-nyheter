@@ -134,18 +134,21 @@ Full liste i [`src/lib/sources.ts`](src/lib/sources.ts). Feed-URL-ene er
 verifisert direkte (ikke gjettet) ved å hente feeden og sjekke at den
 faktisk returnerer gyldig XML.
 
-**Aktive (bekreftet RSS), 20 kilder:** FreightWaves, Journal of Commerce,
+**Aktive (bekreftet RSS), 21 kilder:** FreightWaves, Journal of Commerce,
 Supply Chain Dive, Transport Topics, Supply Chain Brain, Inbound Logistics,
 The Loadstar, gCaptain, Splash247, Tungt.no, NHO Logistikk og Transport,
 Transport & Logistikk, Logistikkforeningen, Financial Times
 (transport-seksjonen), Maritime Bergen, Norges Lastebileier-Forbund (NLF),
 Statens vegvesen, Kystverket, Sjøfartsdirektoratet, World Trade Organization
-(WTO).
+(WTO), SSB (Utenriksøkonomi).
 
-De seks siste ble lagt til etter en kildeliste fra faglærer i et av
+De syv siste ble lagt til etter en kildeliste fra faglærer i et av
 studieemnene dette bygges for (2026-09-03). Kystverket og Sjøfartsdirektoratet
 har ingen egen RSS på sine egne nettsider — feeden er deres offisielle
 pressemeldinger via NTB Kommunikasjon, filtrert på hver etats publisher-ID.
+SSB har flere emne-RSS-er (`/rss/<emne>`), men de er ujevne — mange gir en
+gyldig, men helt tom feed (bl.a. de mer opplagte navnene `utenrikshandel` og
+`godstransport`). `utenriksokonomi` er emnet som faktisk har innhold.
 
 Noen av disse (JOC, Supply Chain Dive, Transport Topics, Supply Chain Brain,
 The Loadstar, gCaptain, Splash247, NHO LT, Maritime Bergen, NLF, Statens
