@@ -134,13 +134,23 @@ Full liste i [`src/lib/sources.ts`](src/lib/sources.ts). Feed-URL-ene er
 verifisert direkte (ikke gjettet) ved å hente feeden og sjekke at den
 faktisk returnerer gyldig XML.
 
-**Aktive (bekreftet RSS), 23 kilder:** FreightWaves, Journal of Commerce,
+**Aktive (bekreftet RSS), 28 kilder:** FreightWaves, Journal of Commerce,
 Supply Chain Dive, Transport Topics, Supply Chain Brain, Inbound Logistics,
 The Loadstar, gCaptain, Splash247, Tungt.no, NHO Logistikk og Transport,
 Transport & Logistikk, Logistikkforeningen, Financial Times
 (transport-seksjonen), Maritime Bergen, Norges Lastebileier-Forbund (NLF),
 Statens vegvesen, Kystverket, Sjøfartsdirektoratet, World Trade Organization
-(WTO), SSB (Utenriksøkonomi), Bergensavisen, Bergens Tidende (Økonomi).
+(WTO), SSB (Utenriksøkonomi), Bergensavisen, Bergens Tidende (Økonomi),
+TradeWinds, Logistikk Inside, MTLogistikk, Bloomberg, Freightos.
+
+De fem siste ble gjenfunnet ved en ny, grundigere verifiseringsrunde —
+alle fire var tidligere merket "ingen RSS funnet" fordi feeden ikke lå på
+et vanlig sted: TradeWinds sin ligger på et eget `services.`-subdomene
+(funnet i forsidens JSON-navigasjon, ikke lenket noe sted), Logistikk
+Inside og MTLogistikk kjører Labrador CMS og krever `?lab_viewport=rss`
+som parameter, og Bloomberg sin hovedside er Cloudflare-blokkert men et
+eget `feeds.bloomberg.com`-subdomene serverer åpne feeds. Bloomberg er
+nøkkelordfiltrert (se under) siden det er generelt nyhetsstoff.
 
 Bergensavisen og Bergens Tidende er bevisst brede (se egen seksjon lenger
 ned) — slått på etter eksplisitt ønske fra brukeren om at bredere regional
@@ -167,15 +177,11 @@ slik at de er klare til å kobles på:**
 
 | Kilde | Problem | Forslag |
 |---|---|---|
-| Supply Chain Digest | `<link>`-taggen peker på en feed som svarer 200 med 0 bytes (forlatt siden 2019) | Custom scraper med cheerio, eller rss.app |
+| Supply Chain Digest | `<link>`-taggen peker på en feed som svarer 200 med 0 bytes (forlatt siden 2019); `/rss/` gir nå 403 | Custom scraper med cheerio, eller rss.app |
 | Supply Chain 24/7 | Hele siden bak Cloudflare-botsjekk | RSSHub-instans eller rss.app |
-| TradeWinds | Betalingsmur, ingen RSS | Manuell gjennomgang / rss.app hvis de har en offentlig forside-feed |
-| Lloyd's List | Betalingsmur, ingen RSS | Samme som over |
-| Logistikk Inside | Ingen RSS-referanse, alle vanlige mønstre gir 404 | Custom scraper |
+| Lloyd's List | Betalingsmur — `/rss-feeds`-siden krever abonnent-SSO-innlogging for å vise feed-URL-er | Manuell gjennomgang med abonnement |
 | Logistikknyhetene | Domenet svarer ikke (NXDOMAIN) — ser nedlagt ut | Fjern, eller sjekk om de har flyttet domene |
-| MTLogistikk | Samme utgivelse som "Moderne Transport" fra faglærers liste (nå "Tidsskriftet Logistikk") — fortsatt ingen RSS-referanse | Custom scraper |
-| Reuters Business | Reuters la ned offentlig RSS for flere år siden | RSSHub, eller dropp kilden |
-| Bloomberg | Ingen offentlig RSS | RSSHub, eller dropp kilden |
+| Reuters Business | Hele siden bak DataDome-botsjekk (CAPTCHA/JS-vegg), i tillegg til at Reuters la ned offentlig RSS for flere år siden | RSSHub, eller dropp kilden |
 | Bergen og Omland havnevesen | Nuxt-app uten RSS-autodiscovery, ingen vanlig feed-sti virker | Custom scraper |
 | Vestland fylkeskommune | Ingen RSS-autodiscovery, gjettede feed-stier gir feilside | Custom scraper |
 | GCE Ocean Technology | Ingen RSS-autodiscovery, vanlige mønstre gir 404 | Custom scraper |

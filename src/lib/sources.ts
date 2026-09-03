@@ -263,6 +263,17 @@ export const sources: Source[] = [
     defaultCategory: "norge",
     enabled: true,
   },
+  {
+    slug: "freightos",
+    name: "Freightos",
+    homepageUrl: "https://www.freightos.com",
+    // Ekte WordPress-RSS, funnet under research på markedsindekser — inkl.
+    // deres ukentlige "Freightos Weekly Update" med fraktratekommentar.
+    feedUrl: "https://www.freightos.com/feed/",
+    country: "INT",
+    defaultCategory: "shipping",
+    enabled: true,
+  },
 
   // --- Ingen fungerende RSS funnet (se README for detaljer og forslag til løsning) ---
   {
@@ -287,11 +298,13 @@ export const sources: Source[] = [
     slug: "tradewinds",
     name: "TradeWinds",
     homepageUrl: "https://www.tradewindsnews.com",
-    feedUrl: null, // betalingsmur, ingen RSS funnet
+    // Ikke autodiscoverable/på vanlige stier — funnet innebygd i
+    // forsidens JSON-navigasjonsdata, på et eget services.-subdomene.
+    feedUrl: "https://services.tradewindsnews.com/api/feed/rss",
     country: "INT",
     defaultCategory: "shipping",
-    paywalled: true,
-    enabled: false,
+    paywalled: true, // kun tittel + kort ingress i feeden
+    enabled: true,
   },
   {
     slug: "lloydslist",
@@ -307,10 +320,12 @@ export const sources: Source[] = [
     slug: "logistikkinside",
     name: "Logistikk Inside",
     homepageUrl: "https://www.logistikkinside.no",
-    feedUrl: null, // ingen RSS-referanse i HTML, vanlige mønstre gir 404
+    // Kjører Labrador CMS (norsk mediepublisering) — feeden krever
+    // ?lab_viewport=rss, usynlig for vanlige /rss-stier.
+    feedUrl: "https://www.logistikkinside.no/?lab_viewport=rss",
     country: "NO",
     defaultCategory: "norge",
-    enabled: false,
+    enabled: true,
   },
   {
     slug: "logistikknyhetene",
@@ -325,13 +340,13 @@ export const sources: Source[] = [
     slug: "mtlogistikk",
     name: "MTLogistikk",
     // Samme publikasjon som "Moderne Transport" i faglærers kildeliste —
-    // omdøpt til "Tidsskriftet Logistikk", fortsatt hostet på mtlogistikk.no.
-    // Fortsatt ingen RSS-referanse i HTML, vanlige mønstre gir 404.
+    // omdøpt til "Tidsskriftet Logistikk". Samme Labrador CMS-plattform og
+    // ?lab_viewport=rss-triks som Logistikk Inside.
     homepageUrl: "https://www.mtlogistikk.no",
-    feedUrl: null,
+    feedUrl: "https://www.mtlogistikk.no/?lab_viewport=rss",
     country: "NO",
     defaultCategory: "norge",
-    enabled: false,
+    enabled: true,
   },
   {
     slug: "bergenhavn",
@@ -421,10 +436,14 @@ export const sources: Source[] = [
     slug: "bloomberg",
     name: "Bloomberg",
     homepageUrl: "https://www.bloomberg.com",
-    feedUrl: null, // ingen offentlig RSS funnet
+    // Hovedsiden er Cloudflare-blokkert, men et eget feeds.-subdomene
+    // (ikke lenket/annonsert noe sted) serverer fungerende feeds — brukte
+    // "industries" som nærmest handel/logistikk av variantene som fantes.
+    feedUrl: "https://feeds.bloomberg.com/industries/news.rss",
     country: "INT",
     defaultCategory: "globalt_geopolitikk",
-    enabled: false,
+    keywordFilter: true,
+    enabled: true,
   },
 ];
 
