@@ -160,6 +160,67 @@ export const sources: Source[] = [
     enabled: true,
   },
 
+  // --- Lagt til etter kildeliste fra faglærer (2026-09-03) ---
+  {
+    slug: "maritimebergen",
+    name: "Maritime Bergen",
+    homepageUrl: "https://www.maritimebergen.no",
+    feedUrl: "https://www.maritimebergen.no/feed/",
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: true,
+  },
+  {
+    slug: "nlf",
+    name: "Norges Lastebileier-Forbund (NLF)",
+    homepageUrl: "https://www.lastebil.no",
+    feedUrl: "https://www.lastebil.no/rss",
+    country: "NO",
+    defaultCategory: "trucking",
+    enabled: true,
+  },
+  {
+    slug: "vegvesen",
+    name: "Statens vegvesen",
+    homepageUrl: "https://www.vegvesen.no",
+    feedUrl: "https://www.vegvesen.no/rss",
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: true,
+  },
+  {
+    slug: "kystverket",
+    name: "Kystverket",
+    homepageUrl: "https://www.kystverket.no",
+    // Kystverket har ingen egen RSS — dette er deres offisielle pressemeldinger
+    // via NTB Kommunikasjon, filtrert på deres publisher-ID.
+    feedUrl: "https://kommunikasjon.ntb.no/rss/releases/latest?publisherId=2088704",
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: true,
+  },
+  {
+    slug: "sdir",
+    name: "Sjøfartsdirektoratet",
+    homepageUrl: "https://www.sdir.no",
+    // Samme NTB Kommunikasjon-mønster som Kystverket, egen publisher-ID.
+    feedUrl: "https://kommunikasjon.ntb.no/rss/releases/latest?publisherId=17849089",
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: true,
+  },
+  {
+    slug: "wto",
+    name: "World Trade Organization (WTO)",
+    homepageUrl: "https://www.wto.org",
+    // Eldre URL som ikke lenger lenkes fra nettsiden, men fortsatt aktiv og
+    // med fyldig innhold direkte i feeden.
+    feedUrl: "https://www.wto.org/library/rss/latest_news_e.xml",
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: true,
+  },
+
   // --- Ingen fungerende RSS funnet (se README for detaljer og forslag til løsning) ---
   {
     slug: "scdigest",
@@ -220,14 +281,92 @@ export const sources: Source[] = [
   {
     slug: "mtlogistikk",
     name: "MTLogistikk",
+    // Samme publikasjon som "Moderne Transport" i faglærers kildeliste —
+    // omdøpt til "Tidsskriftet Logistikk", fortsatt hostet på mtlogistikk.no.
+    // Fortsatt ingen RSS-referanse i HTML, vanlige mønstre gir 404.
     homepageUrl: "https://www.mtlogistikk.no",
-    feedUrl: null, // ingen RSS-referanse i HTML, vanlige mønstre gir 404
+    feedUrl: null,
     country: "NO",
     defaultCategory: "norge",
     enabled: false,
   },
+  {
+    slug: "bergenhavn",
+    name: "Bergen og Omland havnevesen",
+    homepageUrl: "https://www.bergenhavn.no",
+    feedUrl: null, // Nuxt-app uten RSS-autodiscovery, ingen vanlig feed-sti virker
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
+  {
+    slug: "vestlandfylke",
+    name: "Vestland fylkeskommune",
+    homepageUrl: "https://www.vestlandfylke.no",
+    feedUrl: null, // ingen RSS-autodiscovery, gjettede feed-stier gir feilside
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
+  {
+    slug: "gceocean",
+    name: "GCE Ocean Technology",
+    homepageUrl: "https://www.gceocean.no",
+    feedUrl: null, // ingen RSS-autodiscovery, vanlige mønstre gir 404
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
+  {
+    slug: "unctad",
+    name: "UNCTAD",
+    homepageUrl: "https://unctad.org",
+    // Uavklart, ikke bekreftet fraværende: nettsiden er beskyttet av en
+    // interaktiv Cloudflare-sjekk ("er du et menneske?") som blokkerer
+    // automatisk henting. Verifiser manuelt i nettleser senere.
+    feedUrl: null,
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: false,
+  },
+  {
+    slug: "oecd",
+    name: "OECD",
+    homepageUrl: "https://www.oecd.org",
+    feedUrl: null, // hadde RSS tidligere (/newsroom/index.xml), men den redirecter nå til HTML — ser ut til å være fjernet ved siste redesign
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: false,
+  },
 
   // --- Generelle nyhetskilder (krever nøkkelordfiltrering, utenfor MVP) ---
+  {
+    slug: "ba",
+    name: "Bergensavisen",
+    homepageUrl: "https://www.ba.no",
+    // Bekreftet RSS (https://www.ba.no/service/rss), men kun forsiden — ingen
+    // egen næringsliv-/samferdselsseksjon å skru på i stedet. Å slå den på
+    // ville druknet i lokalt stoff (sport, krim, politikk) uten
+    // nøkkelordfiltrering, samme vurdering som for Reuters/Bloomberg under.
+    feedUrl: null,
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
+  {
+    slug: "bt-okonomi",
+    name: "Bergens Tidende (Økonomi)",
+    homepageUrl: "https://www.bt.no",
+    // Bekreftet RSS (https://www.bt.no/rss?kat=nyheter/okonomi) og navnet
+    // antyder at den er avgrenset, men i praksis er den generell regional
+    // næringslivs-/økonomidekning — første sjekkede sak handlet om
+    // boligpriser i Bergen, ikke logistikk/transport. Samme vurdering som
+    // Bergensavisen: for bred uten nøkkelordfiltrering.
+    feedUrl: null,
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
   {
     slug: "reuters-business",
     name: "Reuters Business",

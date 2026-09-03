@@ -13,6 +13,9 @@ const parser = new Parser<Record<string, unknown>, CustomItem>({
   headers: {
     "User-Agent":
       "Mozilla/5.0 (compatible; LogistikkNyhetsbot/1.0; +https://example.com/bot)",
+    // Some servers (seen on wto.org) return 406 Not Acceptable without an
+    // explicit Accept header even though curl's default is fine.
+    Accept: "application/rss+xml, application/xml, text/xml, */*",
   },
 });
 

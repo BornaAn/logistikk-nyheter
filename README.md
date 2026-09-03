@@ -134,13 +134,22 @@ Full liste i [`src/lib/sources.ts`](src/lib/sources.ts). Feed-URL-ene er
 verifisert direkte (ikke gjettet) ved å hente feeden og sjekke at den
 faktisk returnerer gyldig XML.
 
-**Aktive (bekreftet RSS), 14 kilder:** FreightWaves, Journal of Commerce,
+**Aktive (bekreftet RSS), 20 kilder:** FreightWaves, Journal of Commerce,
 Supply Chain Dive, Transport Topics, Supply Chain Brain, Inbound Logistics,
 The Loadstar, gCaptain, Splash247, Tungt.no, NHO Logistikk og Transport,
-Transport & Logistikk, Logistikkforeningen, Financial Times (transport-seksjonen).
+Transport & Logistikk, Logistikkforeningen, Financial Times
+(transport-seksjonen), Maritime Bergen, Norges Lastebileier-Forbund (NLF),
+Statens vegvesen, Kystverket, Sjøfartsdirektoratet, World Trade Organization
+(WTO).
+
+De seks siste ble lagt til etter en kildeliste fra faglærer i et av
+studieemnene dette bygges for (2026-09-03). Kystverket og Sjøfartsdirektoratet
+har ingen egen RSS på sine egne nettsider — feeden er deres offisielle
+pressemeldinger via NTB Kommunikasjon, filtrert på hver etats publisher-ID.
 
 Noen av disse (JOC, Supply Chain Dive, Transport Topics, Supply Chain Brain,
-The Loadstar, gCaptain, Splash247, NHO LT) har bare en kort ingress i selve
+The Loadstar, gCaptain, Splash247, NHO LT, Maritime Bergen, NLF, Statens
+vegvesen, Kystverket, Sjøfartsdirektoratet) har bare en kort ingress i selve
 RSS-feeden — appen scraper alltid artikkelsiden for full tekst først, og
 faller kun tilbake på den korte ingressen hvis scrapingen feiler. Financial
 Times er alltid merket `limited` siden feeden bare gir en avsnitt bak
@@ -157,9 +166,16 @@ slik at de er klare til å kobles på:**
 | Lloyd's List | Betalingsmur, ingen RSS | Samme som over |
 | Logistikk Inside | Ingen RSS-referanse, alle vanlige mønstre gir 404 | Custom scraper |
 | Logistikknyhetene | Domenet svarer ikke (NXDOMAIN) — ser nedlagt ut | Fjern, eller sjekk om de har flyttet domene |
-| MTLogistikk | Ingen RSS-referanse, alle vanlige mønstre gir 404 | Custom scraper |
+| MTLogistikk | Samme utgivelse som "Moderne Transport" fra faglærers liste (nå "Tidsskriftet Logistikk") — fortsatt ingen RSS-referanse | Custom scraper |
 | Reuters Business | Reuters la ned offentlig RSS for flere år siden | RSSHub, eller dropp kilden |
 | Bloomberg | Ingen offentlig RSS | RSSHub, eller dropp kilden |
+| Bergen og Omland havnevesen | Nuxt-app uten RSS-autodiscovery, ingen vanlig feed-sti virker | Custom scraper |
+| Vestland fylkeskommune | Ingen RSS-autodiscovery, gjettede feed-stier gir feilside | Custom scraper |
+| GCE Ocean Technology | Ingen RSS-autodiscovery, vanlige mønstre gir 404 | Custom scraper |
+| Bergensavisen | Kun RSS for hele forsiden, ingen næringsliv-/samferdselsseksjon — ville druknet i lokalt stoff uten nøkkelordfiltrering | Bygg keyword-filter, se Reuters/Bloomberg |
+| Bergens Tidende (Økonomi) | Har en "økonomi"-scoped feed, men i praksis generell regional næringslivsdekning (f.eks. boligpriser), ikke logistikk-spesifikt | Samme som Bergensavisen — trenger nøkkelordfiltrering |
+| UNCTAD | Nettsiden er bak en interaktiv Cloudflare-sjekk som blokkerer automatisk henting | Sjekk manuelt i nettleser, eller RSSHub |
+| OECD | Hadde RSS tidligere (`/newsroom/index.xml`), men den redirecter nå til HTML — ser ut til å være fjernet ved siste redesign | RSSHub, eller dropp kilden |
 
 ## Sammendrag og kategorisering (Claude)
 
