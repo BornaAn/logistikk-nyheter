@@ -134,13 +134,17 @@ Full liste i [`src/lib/sources.ts`](src/lib/sources.ts). Feed-URL-ene er
 verifisert direkte (ikke gjettet) ved å hente feeden og sjekke at den
 faktisk returnerer gyldig XML.
 
-**Aktive (bekreftet RSS), 21 kilder:** FreightWaves, Journal of Commerce,
+**Aktive (bekreftet RSS), 23 kilder:** FreightWaves, Journal of Commerce,
 Supply Chain Dive, Transport Topics, Supply Chain Brain, Inbound Logistics,
 The Loadstar, gCaptain, Splash247, Tungt.no, NHO Logistikk og Transport,
 Transport & Logistikk, Logistikkforeningen, Financial Times
 (transport-seksjonen), Maritime Bergen, Norges Lastebileier-Forbund (NLF),
 Statens vegvesen, Kystverket, Sjøfartsdirektoratet, World Trade Organization
-(WTO), SSB (Utenriksøkonomi).
+(WTO), SSB (Utenriksøkonomi), Bergensavisen, Bergens Tidende (Økonomi).
+
+Bergensavisen og Bergens Tidende er bevisst brede (se egen seksjon lenger
+ned) — slått på etter eksplisitt ønske fra brukeren om at bredere regional
+dekning er greit selv uten nøkkelordfiltrering.
 
 De syv siste ble lagt til etter en kildeliste fra faglærer i et av
 studieemnene dette bygges for (2026-09-03). Kystverket og Sjøfartsdirektoratet
@@ -175,10 +179,26 @@ slik at de er klare til å kobles på:**
 | Bergen og Omland havnevesen | Nuxt-app uten RSS-autodiscovery, ingen vanlig feed-sti virker | Custom scraper |
 | Vestland fylkeskommune | Ingen RSS-autodiscovery, gjettede feed-stier gir feilside | Custom scraper |
 | GCE Ocean Technology | Ingen RSS-autodiscovery, vanlige mønstre gir 404 | Custom scraper |
-| Bergensavisen | Kun RSS for hele forsiden, ingen næringsliv-/samferdselsseksjon — ville druknet i lokalt stoff uten nøkkelordfiltrering | Bygg keyword-filter, se Reuters/Bloomberg |
-| Bergens Tidende (Økonomi) | Har en "økonomi"-scoped feed, men i praksis generell regional næringslivsdekning (f.eks. boligpriser), ikke logistikk-spesifikt | Samme som Bergensavisen — trenger nøkkelordfiltrering |
-| UNCTAD | Nettsiden er bak en interaktiv Cloudflare-sjekk som blokkerer automatisk henting | Sjekk manuelt i nettleser, eller RSSHub |
+| UNCTAD | Nettsiden er bak en interaktiv Cloudflare-sjekk ("er du et menneske?") — dette er bot-beskyttelse jeg bevisst ikke prøver å omgå | Sjekk manuelt i nettleser, eller RSSHub |
 | OECD | Hadde RSS tidligere (`/newsroom/index.xml`), men den redirecter nå til HTML — ser ut til å være fjernet ved siste redesign | RSSHub, eller dropp kilden |
+
+### Bevisst brede kilder
+
+Prosjektet startet med en streng regel: en generell nyhetskilde (hele
+forsiden, ikke en egen bransje-seksjon) ble holdt utenfor med mindre den
+kunne avgrenses, for å unngå at siden drukner i irrelevant stoff. Etter
+eksplisitt ønske fra brukeren om at bredere dekning er greit, er dette nå
+myket opp for regionale Bergen/Vestland-kilder:
+
+- **Bergensavisen** — kun forside-RSS, ingen næringsliv-seksjon.
+- **Bergens Tidende (Økonomi)** — har en "økonomi"-scoped feed, men den
+  dekker generell regional næringslivsdekning (boligpriser m.m.), ikke
+  spesifikt logistikk/transport.
+
+Begge er slått på (`enabled: true`), og vil derfor av og til vise saker
+som ikke er direkte logistikk-relevante. Reuters og Bloomberg har fortsatt
+ingen offentlig RSS i det hele tatt, så de kan ikke slås på uansett — se
+tabellen over.
 
 ## Sammendrag og kategorisering (Claude)
 

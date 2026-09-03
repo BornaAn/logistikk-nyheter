@@ -160,7 +160,7 @@ export default async function Home({ searchParams }: PageProps) {
         />
         <div className="mx-auto w-full max-w-6xl px-4 py-4">
           <div className="flex items-center justify-between gap-4 mb-4">
-            <div className="flex items-center gap-3">
+            <Link href="/" className="flex items-center gap-3">
               <Logo />
               <div>
                 <h1
@@ -179,7 +179,7 @@ export default async function Home({ searchParams }: PageProps) {
                     : "venter på første oppdatering"}
                 </p>
               </div>
-            </div>
+            </Link>
             <ThemeToggle />
           </div>
 

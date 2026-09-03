@@ -352,33 +352,32 @@ export const sources: Source[] = [
     enabled: false,
   },
 
-  // --- Generelle nyhetskilder (krever nøkkelordfiltrering, utenfor MVP) ---
+  // --- Generelle nyhetskilder (bevisst bredere enn resten — se README) ---
   {
     slug: "ba",
     name: "Bergensavisen",
     homepageUrl: "https://www.ba.no",
-    // Bekreftet RSS (https://www.ba.no/service/rss), men kun forsiden — ingen
-    // egen næringsliv-/samferdselsseksjon å skru på i stedet. Å slå den på
-    // ville druknet i lokalt stoff (sport, krim, politikk) uten
-    // nøkkelordfiltrering, samme vurdering som for Reuters/Bloomberg under.
-    feedUrl: null,
+    // Kun forsiden, ingen egen næringsliv-/samferdselsseksjon — vil altså
+    // også inneholde lokalstoff (sport, krim, politikk) uten
+    // nøkkelordfiltrering. Slått på etter eksplisitt ønske om bredere
+    // dekning, se README for avveiningen.
+    feedUrl: "https://www.ba.no/service/rss",
     country: "NO",
     defaultCategory: "norge",
-    enabled: false,
+    enabled: true,
   },
   {
     slug: "bt-okonomi",
     name: "Bergens Tidende (Økonomi)",
     homepageUrl: "https://www.bt.no",
-    // Bekreftet RSS (https://www.bt.no/rss?kat=nyheter/okonomi) og navnet
-    // antyder at den er avgrenset, men i praksis er den generell regional
-    // næringslivs-/økonomidekning — første sjekkede sak handlet om
-    // boligpriser i Bergen, ikke logistikk/transport. Samme vurdering som
-    // Bergensavisen: for bred uten nøkkelordfiltrering.
-    feedUrl: null,
+    // Navnet antyder at den er avgrenset, men i praksis er den generell
+    // regional næringslivs-/økonomidekning (boligpriser m.m.), ikke
+    // logistikk-spesifikt. Slått på etter eksplisitt ønske om bredere
+    // dekning, se README for avveiningen.
+    feedUrl: "https://www.bt.no/rss?kat=nyheter/okonomi",
     country: "NO",
     defaultCategory: "norge",
-    enabled: false,
+    enabled: true,
   },
   {
     slug: "reuters-business",
