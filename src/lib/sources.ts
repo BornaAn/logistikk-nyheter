@@ -274,6 +274,53 @@ export const sources: Source[] = [
     defaultCategory: "shipping",
     enabled: true,
   },
+  {
+    slug: "dn",
+    name: "Dagens Næringsliv (DN)",
+    homepageUrl: "https://www.dn.no",
+    // Norges hovedavis for næringsliv/økonomi — hele avisen er allerede
+    // næringslivsstoff, så ingen nøkkelordfiltrering nødvendig (i motsetning
+    // til BA/BT som er vanlige aviser med alt fra sport til konserter).
+    feedUrl: "https://services.dn.no/api/feed/rss/",
+    country: "NO",
+    defaultCategory: "norge",
+    paywalled: true,
+    enabled: true,
+  },
+  {
+    slug: "aftenposten-okonomi",
+    name: "Aftenposten (Økonomi)",
+    homepageUrl: "https://www.aftenposten.no/okonomi",
+    // Bekreftet reelt avgrenset til økonomi-seksjonen (i motsetning til BTs
+    // tilsvarende feed) — kanaltittelen er rett og slett "Økonomi".
+    feedUrl: "https://www.aftenposten.no/rss/okonomi",
+    country: "NO",
+    defaultCategory: "norge",
+    paywalled: true,
+    enabled: true,
+  },
+  {
+    slug: "avinor",
+    name: "Avinor",
+    homepageUrl: "https://avinor.no",
+    // Ingen egen RSS på avinor.no — pressemeldinger via NTB Kommunikasjon,
+    // samme mønster som Kystverket/Sjøfartsdirektoratet.
+    feedUrl: "https://kommunikasjon.ntb.no/rss/releases/latest?publisherId=17421123",
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: true,
+  },
+  {
+    slug: "innovasjon-norge",
+    name: "Innovasjon Norge",
+    homepageUrl: "https://www.innovasjonnorge.no",
+    // Samme NTB Kommunikasjon-mønster. Ikke transport-/logistikkspesifikk,
+    // men eksport-/handelsrelevant nok til å inkluderes direkte.
+    feedUrl: "https://kommunikasjon.ntb.no/rss/releases/latest?publisherId=89989",
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: true,
+  },
 
   // --- Ingen fungerende RSS funnet (se README for detaljer og forslag til løsning) ---
   {
@@ -392,6 +439,98 @@ export const sources: Source[] = [
     name: "OECD",
     homepageUrl: "https://www.oecd.org",
     feedUrl: null, // hadde RSS tidligere (/newsroom/index.xml), men den redirecter nå til HTML — ser ut til å være fjernet ved siste redesign
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: false,
+  },
+  {
+    slug: "oslohavn",
+    name: "Oslo Havn",
+    homepageUrl: "https://www.oslohavn.no",
+    feedUrl: null, // Episerver/Optimizely uten RSS-modul, ingen vanlig feed-sti virker
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
+  {
+    slug: "oslo-bymiljoetaten",
+    name: "Oslo kommune / Bymiljøetaten",
+    homepageUrl: "https://www.oslo.kommune.no",
+    // Det gamle nyhetsrom.bymiljoetaten.no (WordPress) er nå NXDOMAIN —
+    // nedlagt/flyttet inn i oslo.kommune.no, som ikke har RSS.
+    feedUrl: null,
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
+  {
+    slug: "rederi",
+    name: "Norges Rederiforbund",
+    homepageUrl: "https://rederi.no",
+    feedUrl: null, // ingen RSS-autodiscovery, vanlige mønstre gir 404
+    country: "NO",
+    defaultCategory: "shipping",
+    enabled: false,
+  },
+  {
+    slug: "e24",
+    name: "E24",
+    homepageUrl: "https://e24.no",
+    // Har en fungerende feed (e24.no/rss), men feedens egen <description>
+    // forbyr uttrykkelig bruk til LLM-trening/tekst- og datautvinning uten
+    // skriftlig tillatelse fra E24. Respekterer det og lar kilden stå
+    // avslått — spør E24 om tillatelse hvis dette er ønskelig.
+    feedUrl: null,
+    country: "NO",
+    defaultCategory: "norge",
+    enabled: false,
+  },
+
+  // --- Markedsindekser og statistikk: vurdert, men ikke bygget scraper for ---
+  {
+    slug: "kiel-trade-indicator",
+    name: "Kiel Trade Indicator",
+    homepageUrl: "https://www.kielinstitut.de/research/topics/international-trade/kiel-trade-indicator/",
+    // Ekte og offentlig når den publiseres, men uklar nåværende kadence —
+    // fant ingen Trade Indicator-spesifikk sak i de siste ~3 månedene med
+    // nyhetsoppføringer på instituttets side. Bygg scraper når/hvis
+    // publiseringsmønsteret er bekreftet stabilt.
+    feedUrl: null,
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: false,
+  },
+  {
+    slug: "gscpi",
+    name: "Global Supply Chain Pressure Index (NY Fed)",
+    homepageUrl: "https://www.newyorkfed.org/research/policy/gscpi",
+    // Offentlig og oppdateres månedlig, men innholdet er en kort
+    // databeskrivelse (2 setninger), ikke en artikkel — lavere prioritet.
+    feedUrl: null,
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: false,
+  },
+  {
+    slug: "baltic-dry",
+    name: "Baltic Dry Index",
+    homepageUrl: "https://tradingeconomics.com/commodity/baltic",
+    // Selve Baltic Exchange-indeksen er bak betalingsmur. Trading Economics
+    // har korte, generiske "news stream"-notiser om daglige bevegelser,
+    // men uten permalink per notis — lavere prioritet.
+    feedUrl: null,
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: false,
+  },
+  {
+    slug: "sp-global-pmi",
+    name: "S&P Global PMI",
+    homepageUrl: "https://www.pmi.spglobal.com",
+    // Nedprioritert: URL-ene er ugjennomsiktige GUID-er uten offentlig
+    // oversiktsside, innholdet leveres som PDF, og direkte HTTP-henting
+    // (ikke nettleser) ga 403 — konsistent med bot-beskyttelse.
+    feedUrl: null,
     country: "INT",
     defaultCategory: "globalt_geopolitikk",
     enabled: false,

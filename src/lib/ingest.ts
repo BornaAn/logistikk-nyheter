@@ -1,8 +1,16 @@
 import { prisma } from "./prisma";
 import { enabledSources, KEYWORD_FILTER, type Source } from "./sources";
+import { scrapedSources, type ScrapedSource } from "./scrapers";
 import { fetchFeed, type FeedItem } from "./rss";
 import { extractArticleText } from "./extract";
 import { summarizeArticle } from "./summarize";
+
+/** What the ingest pipeline actually needs from a source, regardless of
+ * whether it came from sources.ts (RSS) or scrapers.ts (custom scrape). */
+type IngestSource = Pick<Source | ScrapedSource, "name" | "homepageUrl" | "defaultCategory"> & {
+  paywalled?: boolean;
+  keywordFilter?: boolean;
+};
 
 // Cost/safety controls for the Claude API step.
 const MAX_SUMMARIES_PER_RUN = 60;
@@ -45,11 +53,22 @@ async function ingestNewArticles(): Promise<{
 
   // Fetch every feed up front so we can interleave sources fairly below —
   // otherwise a single high-volume source (e.g. FreightWaves) drains the
-  // whole run's cap before lower-volume sources ever get a turn.
-  const perSource: { source: Source; items: FeedItem[] }[] = [];
-  for (const source of enabledSources()) {
+  // whole run's cap before lower-volume sources ever get a turn. RSS
+  // sources and custom-scraped sources (market indices etc.) are merged
+  // into the same list here — downstream code doesn't need to know which
+  // is which.
+  const perSource: { source: IngestSource; items: FeedItem[] }[] = [];
+
+  const fetchTasks: { source: IngestSource; fetch: () => Promise<FeedItem[]> }[] = [
+    ...enabledSources().map((source) => ({ source, fetch: () => fetchFeed(source) })),
+    ...scrapedSources
+      .filter((s) => s.enabled)
+      .map((source) => ({ source, fetch: source.fetchItems })),
+  ];
+
+  for (const { source, fetch } of fetchTasks) {
     try {
-      let items = await fetchFeed(source);
+      let items = await fetch();
       sourcesOk++;
       found += items.length;
 
@@ -96,7 +115,13 @@ async function ingestNewArticles(): Promise<{
       progressed = true;
 
       try {
-        const extracted = await extractArticleText(item.articleUrl, item.title, item.rssText);
+        // A scraper that already captured the real content while building
+        // the item list (e.g. Drewry's same-URL weekly update) skips
+        // re-fetching articleUrl — that content already is the complete
+        // public commentary, not a preview, so it's never "limited".
+        const extracted = item.fullText
+          ? { text: item.fullText, isFullText: true }
+          : await extractArticleText(item.articleUrl, item.title, item.rssText);
         const isLimited = Boolean(source.paywalled) || !extracted.isFullText;
 
         await prisma.article.create({

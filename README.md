@@ -134,29 +134,39 @@ Full liste i [`src/lib/sources.ts`](src/lib/sources.ts). Feed-URL-ene er
 verifisert direkte (ikke gjettet) ved å hente feeden og sjekke at den
 faktisk returnerer gyldig XML.
 
-**Aktive (bekreftet RSS), 28 kilder:** FreightWaves, Journal of Commerce,
+**Aktive (bekreftet RSS), 32 kilder:** FreightWaves, Journal of Commerce,
 Supply Chain Dive, Transport Topics, Supply Chain Brain, Inbound Logistics,
 The Loadstar, gCaptain, Splash247, Tungt.no, NHO Logistikk og Transport,
 Transport & Logistikk, Logistikkforeningen, Financial Times
 (transport-seksjonen), Maritime Bergen, Norges Lastebileier-Forbund (NLF),
 Statens vegvesen, Kystverket, Sjøfartsdirektoratet, World Trade Organization
 (WTO), SSB (Utenriksøkonomi), Bergensavisen, Bergens Tidende (Økonomi),
-TradeWinds, Logistikk Inside, MTLogistikk, Bloomberg, Freightos.
+TradeWinds, Logistikk Inside, MTLogistikk, Bloomberg, Freightos,
+Dagens Næringsliv (DN), Aftenposten (Økonomi), Avinor, Innovasjon Norge.
 
-De fem siste ble gjenfunnet ved en ny, grundigere verifiseringsrunde —
-alle fire var tidligere merket "ingen RSS funnet" fordi feeden ikke lå på
-et vanlig sted: TradeWinds sin ligger på et eget `services.`-subdomene
-(funnet i forsidens JSON-navigasjon, ikke lenket noe sted), Logistikk
-Inside og MTLogistikk kjører Labrador CMS og krever `?lab_viewport=rss`
-som parameter, og Bloomberg sin hovedside er Cloudflare-blokkert men et
-eget `feeds.bloomberg.com`-subdomene serverer åpne feeds. Bloomberg er
-nøkkelordfiltrert (se under) siden det er generelt nyhetsstoff.
+**Pluss 3 kilder uten RSS i det hele tatt, hentet med egne scrapere** (se
+"Markedsindekser og statistikk" lenger ned): Drewry World Container Index,
+Xeneta, ISM (Institute for Supply Management).
+
+TradeWinds, Logistikk Inside, MTLogistikk og Bloomberg ble gjenfunnet ved
+en ny, grundigere verifiseringsrunde — alle fire var tidligere merket
+"ingen RSS funnet" fordi feeden ikke lå på et vanlig sted: TradeWinds sin
+ligger på et eget `services.`-subdomene (funnet i forsidens
+JSON-navigasjon, ikke lenket noe sted), Logistikk Inside og MTLogistikk
+kjører Labrador CMS og krever `?lab_viewport=rss` som parameter, og
+Bloomberg sin hovedside er Cloudflare-blokkert men et eget
+`feeds.bloomberg.com`-subdomene serverer åpne feeds. Bloomberg er
+nøkkelordfiltrert (se under) siden det er generelt nyhetsstoff. Freightos
+ble funnet under research på markedsindekser (se under) og hadde, litt
+overraskende, en helt vanlig WordPress-RSS hele tiden.
 
 Bergensavisen og Bergens Tidende er bevisst brede (se egen seksjon lenger
 ned) — slått på etter eksplisitt ønske fra brukeren om at bredere regional
-dekning er greit selv uten nøkkelordfiltrering.
+dekning er greit selv uten nøkkelordfiltrering, men nøkkelordfiltrert for
+å luke ut konsertdatoer, sport og krim. DN og Aftenposten (Økonomi) er
+derimot rene næringslivspublikasjoner og trenger ikke samme filter.
 
-De syv siste ble lagt til etter en kildeliste fra faglærer i et av
+De elleve foregående ble lagt til etter en kildeliste fra faglærer i et av
 studieemnene dette bygges for (2026-09-03). Kystverket og Sjøfartsdirektoratet
 har ingen egen RSS på sine egne nettsider — feeden er deres offisielle
 pressemeldinger via NTB Kommunikasjon, filtrert på hver etats publisher-ID.
@@ -187,24 +197,80 @@ slik at de er klare til å kobles på:**
 | GCE Ocean Technology | Ingen RSS-autodiscovery, vanlige mønstre gir 404 | Custom scraper |
 | UNCTAD | Nettsiden er bak en interaktiv Cloudflare-sjekk ("er du et menneske?") — dette er bot-beskyttelse jeg bevisst ikke prøver å omgå | Sjekk manuelt i nettleser, eller RSSHub |
 | OECD | Hadde RSS tidligere (`/newsroom/index.xml`), men den redirecter nå til HTML — ser ut til å være fjernet ved siste redesign | RSSHub, eller dropp kilden |
+| Oslo Havn | Episerver/Optimizely uten RSS-modul, ingen vanlig feed-sti virker | Custom scraper |
+| Oslo kommune / Bymiljøetaten | Gammel WordPress-nyhetsrom (nyhetsrom.bymiljoetaten.no) er nå NXDOMAIN — nedlagt/flyttet inn i oslo.kommune.no, som ikke har RSS | Custom scraper hvis relevant innhold finnes et annet sted på oslo.kommune.no |
+| Norges Rederiforbund | Ingen RSS-autodiscovery, vanlige mønstre gir 404 | Custom scraper |
+| E24 | Har fungerende RSS (`e24.no/rss`), men feedens egen `<description>` forbyr bruk til LLM-trening/tekst- og datautvinning uten skriftlig tillatelse — respektert, holdt avslått | Spør E24 om skriftlig tillatelse |
 
-### Bevisst brede kilder
+### Bevisst brede kilder — og nøkkelordfiltrering
 
 Prosjektet startet med en streng regel: en generell nyhetskilde (hele
 forsiden, ikke en egen bransje-seksjon) ble holdt utenfor med mindre den
 kunne avgrenses, for å unngå at siden drukner i irrelevant stoff. Etter
-eksplisitt ønske fra brukeren om at bredere dekning er greit, er dette nå
-myket opp for regionale Bergen/Vestland-kilder:
+eksplisitt ønske fra brukeren om at bredere dekning er greit — men *ikke*
+konsertdatoer og sport — fikk kilder markert `keywordFilter: true` i
+[`src/lib/sources.ts`](src/lib/sources.ts) et eget filtreringssteg
+(`KEYWORD_FILTER`, en liste norske/engelske transport-/handels-/
+økonomiord) som luker ut alt som ikke treffer, *før* noe hentes ut eller
+sendes til Claude:
 
 - **Bergensavisen** — kun forside-RSS, ingen næringsliv-seksjon.
-- **Bergens Tidende (Økonomi)** — har en "økonomi"-scoped feed, men den
-  dekker generell regional næringslivsdekning (boligpriser m.m.), ikke
-  spesifikt logistikk/transport.
+  Nøkkelordfiltrert: 15 saker i feeden ga 2 igjen ved test (konsertdatoer,
+  en matvaretilbakekalling og en sykehussak luket ut; en drivstoffpris-sak
+  beholdt).
+- **Bergens Tidende (Økonomi)** — "økonomi"-scoped feed, men dekker
+  generell regional næringslivsdekning (boligpriser m.m.), ikke spesifikt
+  logistikk/transport. Samme filter, samme effekt (25 → 2 ved test).
+- **Bloomberg** — hovedsiden er Cloudflare-blokkert (se over), feeden som
+  faktisk virker er "industries"-varianten, fortsatt bredt nok til å
+  trenge filteret (20 → 3 ved test).
 
-Begge er slått på (`enabled: true`), og vil derfor av og til vise saker
-som ikke er direkte logistikk-relevante. Reuters og Bloomberg har fortsatt
-ingen offentlig RSS i det hele tatt, så de kan ikke slås på uansett — se
-tabellen over.
+**DN og Aftenposten (Økonomi) har ikke filteret** — begge er rene
+næringslivspublikasjoner der praktisk talt alt innhold allerede er
+relevant, så et transport-spesifikt nøkkelordfilter ville kuttet bort for
+mye ekte næringslivsstoff.
+
+## Markedsindekser og statistikk
+
+Utover RSS-kilder henter [`src/lib/scrapers.ts`](src/lib/scrapers.ts) også
+inn kommentartekst fra tre markedsindekser som ikke har RSS i det hele
+tatt, men som publiserer ekte, offentlig lesbar analysetekst — ikke bare
+tall bak betalingsmur. Hver "scraper" returnerer data i nøyaktig samme
+form som en RSS-kilde ville gjort, så resten av rørledningen (dedup,
+uttrekk, Claude-oppsummering, `sufficientContent`-sjekken) trenger ikke
+vite forskjellen:
+
+- **Drewry World Container Index** — samme URL oppdateres i ny hver
+  torsdag under overskriften "Our detailed assessment for [dato]",
+  etterfulgt av en punktliste. Siden det ikke finnes en egen lenke per
+  ukes oppdatering, bygger scraperen en syntetisk URL med datoen som
+  fragment (`...#wci-2026-08-27`) for å skille ukene fra hverandre i
+  databasen — fragmentet ignoreres av nettleseren, så "Les hele saken"
+  åpner fortsatt riktig, nåværende side.
+- **Xeneta** — nyhetslisten på `/news` har et maskinlesbart
+  `data-sort`-tidsstempel på hver oppføring (mer pålitelig enn å tolke
+  datoformatet i URL-slug-en, som varierer: `16.7.2026`, `21.08.26`,
+  `6.8.2026`...). Hver ukentlige oppdatering har sin egen ekte lenke, og
+  den vanlige artikkel-uthentingen fungerer fint på selve saken.
+- **ISM (Institute for Supply Management)** — `ismworld.org` krever
+  abonnent-innlogging for selve rapportene, men PR Newswire speiler hele
+  pressemeldingen (inkl. hele sitatet fra styrelederen) uten betalingsmur.
+  Henter kun Manufacturing PMI og Services PMI fra nyhetsrom-listen deres,
+  filtrert bort fra andre ISM-kunngjøringer.
+
+Alle tre ble verifisert direkte mot faktisk HTML-struktur (ikke antatt)
+før koden ble skrevet — se commit-historikken for detaljene som ble
+funnet på hver side.
+
+**Vurdert, men ikke bygget scraper for ennå** (dokumentert i
+`sources.ts` med grunn):
+
+| Kilde | Hvorfor ikke (ennå) |
+|---|---|
+| Kiel Trade Indicator | Ekte og offentlig, men uklar nåværende publiseringskadence — fant ingen Trade Indicator-spesifikk sak i de siste ~3 månedene med nyhetsoppføringer |
+| Global Supply Chain Pressure Index (NY Fed) | Offentlig og månedlig, men innholdet er en kort databeskrivelse (2 setninger), ikke en artikkel |
+| Baltic Dry Index | Selve indeksen er bak betalingsmur; Trading Economics har korte, generiske daglige notiser uten permalink per notis |
+| S&P Global PMI | Ugjennomsiktige GUID-URL-er uten offentlig oversiktsside, PDF-format, og direkte HTTP-henting ga 403 (bot-beskyttelse) |
 
 ## Sammendrag og kategorisering (Claude)
 

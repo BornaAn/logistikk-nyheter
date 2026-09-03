@@ -25,6 +25,13 @@ export interface FeedItem {
   publishedAt: Date;
   /** Best text we could get straight from the feed (content:encoded > contentSnippet). */
   rssText: string;
+  /**
+   * Set only by custom scrapers (see scrapers.ts) that already captured the
+   * real content while building the item list — e.g. a page that updates
+   * in place with no separate permalink per update. When present, ingest.ts
+   * uses this directly instead of re-scraping `articleUrl`.
+   */
+  fullText?: string;
 }
 
 function stripHtml(html: string): string {
