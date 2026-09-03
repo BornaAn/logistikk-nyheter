@@ -143,6 +143,74 @@ async function fetchIsmPmi(): Promise<FeedItem[]> {
   return items;
 }
 
+// --- Global Supply Chain Pressure Index (NY Fed) ---------------------------
+// The page itself is a JS-driven interactive with no server-rendered
+// narrative text, but it loads a small, genuinely public JSON file with
+// exactly that narrative: {interactive: {summaryTitle: "Estimates for
+// <Month Year>", summaryList: [...]}}. Found via the page's own network
+// requests — a stable, documented data endpoint, not a scraping hack.
+
+async function fetchGscpi(): Promise<FeedItem[]> {
+  const pageUrl = "https://www.newyorkfed.org/research/policy/gscpi";
+  const dataUrl =
+    "https://www.newyorkfed.org/medialibrary/research/interactives/data/gscpi/gscpi.json";
+
+  const res = await fetch(dataUrl, { headers: { "User-Agent": UA } });
+  if (!res.ok) throw new Error(`HTTP ${res.status} fra ${dataUrl}`);
+  const data = (await res.json()) as {
+    interactive?: { summaryTitle?: string; summaryList?: string[] };
+  };
+
+  const summaryTitle = data.interactive?.summaryTitle; // "Estimates for July 2026"
+  const summaryList = data.interactive?.summaryList ?? [];
+  if (!summaryTitle || summaryList.length === 0) return [];
+
+  const monthYear = summaryTitle.replace(/^Estimates for\s+/i, "").trim();
+  const parsedDate = new Date(monthYear);
+  const publishedAt = Number.isNaN(parsedDate.getTime()) ? new Date() : parsedDate;
+  const fullText = summaryList.join("\n\n");
+  const monthKey = monthYear.toLowerCase().replace(/\s+/g, "-");
+
+  return [
+    {
+      title: `Global Supply Chain Pressure Index – ${summaryTitle}`,
+      articleUrl: `${pageUrl}#gscpi-${monthKey}`,
+      publishedAt,
+      rssText: fullText,
+      fullText,
+    },
+  ];
+}
+
+// --- Baltic Dry Index (via Trading Economics) -------------------------------
+// The Baltic Exchange's own index is paywalled. Trading Economics mirrors a
+// substantive, server-rendered daily analysis paragraph under a "Summary"
+// tab (#historical-desc h2#description) — real market commentary, not just
+// the bare number. Same page updates in place, so — like Drewry — a
+// synthetic dedup key (today's date) stands in for a missing permalink.
+
+async function fetchBalticDry(): Promise<FeedItem[]> {
+  const url = "https://tradingeconomics.com/commodity/baltic";
+  const html = await fetchHtml(url);
+  const $ = cheerio.load(html);
+
+  const fullText = $("#historical-desc h2#description").first().text().trim();
+  if (!fullText) return [];
+
+  const now = new Date();
+  const dateKey = now.toISOString().slice(0, 10);
+
+  return [
+    {
+      title: `Baltic Dry Index – oppdatering ${dateKey}`,
+      articleUrl: `${url}#bdi-${dateKey}`,
+      publishedAt: now,
+      rssText: fullText,
+      fullText,
+    },
+  ];
+}
+
 export const scrapedSources: ScrapedSource[] = [
   {
     slug: "drewry-wci",
@@ -171,5 +239,23 @@ export const scrapedSources: ScrapedSource[] = [
     defaultCategory: "globalt_geopolitikk",
     enabled: true,
     fetchItems: fetchIsmPmi,
+  },
+  {
+    slug: "gscpi",
+    name: "Global Supply Chain Pressure Index (NY Fed)",
+    homepageUrl: "https://www.newyorkfed.org/research/policy/gscpi",
+    country: "INT",
+    defaultCategory: "globalt_geopolitikk",
+    enabled: true,
+    fetchItems: fetchGscpi,
+  },
+  {
+    slug: "baltic-dry",
+    name: "Baltic Dry Index",
+    homepageUrl: "https://tradingeconomics.com/commodity/baltic",
+    country: "INT",
+    defaultCategory: "shipping",
+    enabled: true,
+    fetchItems: fetchBalticDry,
   },
 ];

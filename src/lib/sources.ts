@@ -500,29 +500,12 @@ export const sources: Source[] = [
     defaultCategory: "globalt_geopolitikk",
     enabled: false,
   },
-  {
-    slug: "gscpi",
-    name: "Global Supply Chain Pressure Index (NY Fed)",
-    homepageUrl: "https://www.newyorkfed.org/research/policy/gscpi",
-    // Offentlig og oppdateres månedlig, men innholdet er en kort
-    // databeskrivelse (2 setninger), ikke en artikkel — lavere prioritet.
-    feedUrl: null,
-    country: "INT",
-    defaultCategory: "globalt_geopolitikk",
-    enabled: false,
-  },
-  {
-    slug: "baltic-dry",
-    name: "Baltic Dry Index",
-    homepageUrl: "https://tradingeconomics.com/commodity/baltic",
-    // Selve Baltic Exchange-indeksen er bak betalingsmur. Trading Economics
-    // har korte, generiske "news stream"-notiser om daglige bevegelser,
-    // men uten permalink per notis — lavere prioritet.
-    feedUrl: null,
-    country: "INT",
-    defaultCategory: "globalt_geopolitikk",
-    enabled: false,
-  },
+  // GSCPI og Baltic Dry Index er ikke lenger her — begge har fått egne
+  // scrapere i src/lib/scrapers.ts. GSCPI: fant en liten, offentlig
+  // JSON-fil siden selv laster inn til sitt interaktive diagram
+  // (gscpi.json), med akkurat den månedlige narrativteksten. Baltic Dry:
+  // Trading Economics har en substansiell, server-rendret analyseavsnitt
+  // (ikke bare 2 setninger som først antatt) under en "Summary"-fane.
   {
     slug: "sp-global-pmi",
     name: "S&P Global PMI",

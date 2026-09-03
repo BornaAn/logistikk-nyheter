@@ -89,9 +89,15 @@ ekte hostet database. Enklest siden du uansett oppretter Vercel-konto:
    Neon, gratis nivå er mer enn nok her). Koble den til prosjektet — Vercel
    setter da `DATABASE_URL` automatisk som miljøvariabel.
 
-`build`-scriptet i `package.json` kjører `prisma migrate deploy` før
-`next build` ved hver deploy, så nye databasetabeller/-endringer ruller ut
-automatisk uten manuelle steg.
+**Databasemigrasjoner kjører ikke lenger automatisk ved hver deploy.**
+Det gjorde de tidligere (`prisma migrate deploy` som del av `build`), men
+Neons connection pooler la av og til igjen en fastlåst (idle) tilkobling
+som holdt migrasjonslåsen — det blokkerte flere påfølgende Vercel-deploys
+helt, selv når det ikke fantes noen faktiske ventende migrasjoner. Kjør i
+stedet `npm run db:deploy` manuelt (fra en maskin med tilgang til
+produksjons-`DATABASE_URL`) hver gang du faktisk endrer
+[`prisma/schema.prisma`](prisma/schema.prisma) — de aller fleste vanlige
+kodedeploys trenger ingen migrasjon i det hele tatt.
 
 *(Alternativ: [Supabase](https://supabase.com/) hvis du heller vil ha
 databasen hos en annen leverandør enn Vercel — samme fremgangsmåte, bare at
