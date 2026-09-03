@@ -102,14 +102,19 @@ export default async function Home({ searchParams }: PageProps) {
       where: { aiSummary: { not: null } },
       _count: true,
     }),
-    // Sourced from Article.fetchedAt rather than FetchLog: every successful
-    // article write updates this reliably, whereas the FetchLog row is only
-    // written once at the very end of a run and can be lost if the
-    // connection drops on a long-running invocation (the ingest itself
-    // still succeeds either way — see src/lib/ingest.ts).
+    // Sourced from the most recent successful summarization, not fetchedAt:
+    // fetchedAt updates whenever the feed step runs even if every
+    // summarization call fails afterwards (e.g. the Anthropic account ran
+    // out of credits) — that would make this claim the site is fresh on a
+    // day where zero new stories actually became visible. summarizedAt only
+    // advances when a real, published summary is written, which is what a
+    // reader actually cares about. Each article write commits individually
+    // during the run (not the fragile once-at-the-end FetchLog row), so this
+    // is just as reliable as fetchedAt was.
     prisma.article.findFirst({
-      orderBy: { fetchedAt: "desc" },
-      select: { fetchedAt: true },
+      where: { aiSummary: { not: null } },
+      orderBy: { summarizedAt: "desc" },
+      select: { summarizedAt: true },
     }),
   ]);
 
@@ -169,8 +174,8 @@ export default async function Home({ searchParams }: PageProps) {
                 </h1>
                 <p className="text-xs text-muted mt-1">
                   {allTimeTotal} saker · {activeSources.length} aktive kilder ·{" "}
-                  {lastRun
-                    ? `sist oppdatert ${formatRelativeTime(lastRun.fetchedAt)}`
+                  {lastRun?.summarizedAt
+                    ? `sist oppdatert ${formatRelativeTime(lastRun.summarizedAt)}`
                     : "venter på første oppdatering"}
                 </p>
               </div>
