@@ -26,9 +26,39 @@ export interface Source {
    * free ingress.
    */
   paywalled?: boolean;
+  /**
+   * True for a general-interest source (a full front-page feed, not a
+   * dedicated trade/business publication) — every item is checked against
+   * `KEYWORD_FILTER` before ingestion, and anything that doesn't match
+   * (sports, culture, crime, weather, etc.) is skipped. Without this,
+   * "broader regional coverage" quietly turns into concert listings.
+   */
+  keywordFilter?: boolean;
   /** Set to false to keep a source defined but skip it during ingestion. */
   enabled: boolean;
 }
+
+/**
+ * Norwegian + English terms marking an item as plausibly logistics/
+ * transport/trade/economy-relevant. Matched case-insensitively against
+ * title + RSS teaser for any source with `keywordFilter: true`.
+ */
+export const KEYWORD_FILTER = new RegExp(
+  [
+    "transport", "logistikk", "logistics", "frakt", "freight", "spedis",
+    "forward(ing|er)", "havn\\w*", "port\\b", "skip\\w*", "shipping",
+    "sjøfart", "maritim", "maritime", "rederi", "vogntog", "lastebil",
+    "trucking", "gods\\w*", "cargo", "vareeksport", "vareimport", "eksport",
+    "import\\b", "export\\b", "toll\\b", "tariff", "handel\\w*", "trade\\b",
+    "forsyningskjede", "supply.?chain", "næringsliv", "økonomi\\w*",
+    "economy", "economic", "samferdsel", "lager\\w*", "warehous",
+    "distribusjon", "logistikk\\w*", "jernbane", "railway", "rail\\b",
+    "luftfrakt", "container\\w*", "flåte\\w*", "fleet\\b", "bunkers?",
+    "drivstoff\\w*", "diesel", "fuel\\b", "kanal\\b", "canal\\b",
+    "verft\\b", "shipyard",
+  ].join("|"),
+  "i",
+);
 
 export const sources: Source[] = [
   // --- Bekreftet RSS (verifisert direkte mot feed-URL-en) ---
@@ -352,31 +382,30 @@ export const sources: Source[] = [
     enabled: false,
   },
 
-  // --- Generelle nyhetskilder (bevisst bredere enn resten — se README) ---
+  // --- Generelle nyhetskilder (bredere, men nøkkelordfiltrert — se README) ---
   {
     slug: "ba",
     name: "Bergensavisen",
     homepageUrl: "https://www.ba.no",
-    // Kun forsiden, ingen egen næringsliv-/samferdselsseksjon — vil altså
-    // også inneholde lokalstoff (sport, krim, politikk) uten
-    // nøkkelordfiltrering. Slått på etter eksplisitt ønske om bredere
-    // dekning, se README for avveiningen.
+    // Kun forsiden, ingen egen næringsliv-/samferdselsseksjon — filtreres
+    // derfor mot KEYWORD_FILTER før noe lagres, ellers hadde alt fra
+    // konsertdatoer til sport kommet med.
     feedUrl: "https://www.ba.no/service/rss",
     country: "NO",
     defaultCategory: "norge",
+    keywordFilter: true,
     enabled: true,
   },
   {
     slug: "bt-okonomi",
     name: "Bergens Tidende (Økonomi)",
     homepageUrl: "https://www.bt.no",
-    // Navnet antyder at den er avgrenset, men i praksis er den generell
-    // regional næringslivs-/økonomidekning (boligpriser m.m.), ikke
-    // logistikk-spesifikt. Slått på etter eksplisitt ønske om bredere
-    // dekning, se README for avveiningen.
+    // "Økonomi"-scoped, men fortsatt bred nok (boligpriser m.m.) til å
+    // trenge nøkkelordfiltrering på toppen.
     feedUrl: "https://www.bt.no/rss?kat=nyheter/okonomi",
     country: "NO",
     defaultCategory: "norge",
+    keywordFilter: true,
     enabled: true,
   },
   {

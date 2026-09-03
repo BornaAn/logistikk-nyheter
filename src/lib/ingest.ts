@@ -1,5 +1,5 @@
 import { prisma } from "./prisma";
-import { enabledSources, type Source } from "./sources";
+import { enabledSources, KEYWORD_FILTER, type Source } from "./sources";
 import { fetchFeed, type FeedItem } from "./rss";
 import { extractArticleText } from "./extract";
 import { summarizeArticle } from "./summarize";
@@ -49,9 +49,14 @@ async function ingestNewArticles(): Promise<{
   const perSource: { source: Source; items: FeedItem[] }[] = [];
   for (const source of enabledSources()) {
     try {
-      const items = await fetchFeed(source);
+      let items = await fetchFeed(source);
       sourcesOk++;
       found += items.length;
+
+      if (source.keywordFilter) {
+        items = items.filter((i) => KEYWORD_FILTER.test(`${i.title} ${i.rssText}`));
+      }
+
       perSource.push({ source, items });
     } catch (err) {
       sourcesFailed++;
