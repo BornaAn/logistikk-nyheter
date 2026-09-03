@@ -3,10 +3,12 @@ import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ArticleCard, type ArticleCardData } from "@/components/ArticleCard";
 import { FilterBar } from "@/components/FilterBar";
+import { HomeLink } from "@/components/HomeLink";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ALL_CATEGORIES } from "@/lib/categories";
 import { formatRelativeTime } from "@/lib/format";
 import { sources } from "@/lib/sources";
+import { scrapedSources } from "@/lib/scrapers";
 import type { Category } from "@prisma/client";
 
 const PAGE_SIZE = 40;
@@ -119,9 +121,11 @@ export default async function Home({ searchParams }: PageProps) {
   ]);
 
   const countBySource = new Map(sourceCounts.map((s) => [s.sourceName, s._count]));
-  const activeSources = sources.filter((s) => s.enabled && s.feedUrl);
-  const norwegianSources = activeSources.filter((s) => s.country === "NO");
-  const internationalSources = activeSources.filter((s) => s.country === "INT");
+  const rssSources = sources.filter((s) => s.enabled && s.feedUrl);
+  const activeScrapedSources = scrapedSources.filter((s) => s.enabled);
+  const activeSources = [...rssSources, ...activeScrapedSources];
+  const norwegianSources = rssSources.filter((s) => s.country === "NO");
+  const internationalSources = rssSources.filter((s) => s.country === "INT");
 
   const cards: ArticleCardData[] = articles.map((a) => ({
     id: a.id,
@@ -160,7 +164,7 @@ export default async function Home({ searchParams }: PageProps) {
         />
         <div className="mx-auto w-full max-w-6xl px-4 py-4">
           <div className="flex items-center justify-between gap-4 mb-4">
-            <Link href="/" className="flex items-center gap-3">
+            <HomeLink>
               <Logo />
               <div>
                 <h1
@@ -179,7 +183,7 @@ export default async function Home({ searchParams }: PageProps) {
                     : "venter på første oppdatering"}
                 </p>
               </div>
-            </Link>
+            </HomeLink>
             <ThemeToggle />
           </div>
 
@@ -237,8 +241,10 @@ export default async function Home({ searchParams }: PageProps) {
               <p className="text-sm leading-relaxed text-foreground/80">
                 Laget av Borna. Samler saker fra {norwegianSources.length} norske og{" "}
                 {internationalSources.length} internasjonale kilder — ulike redaksjoner,
-                ulikt ståsted — og oppsummerer dem nøytralt uten å publisere rå tekst
-                fra kildene.
+                ulikt ståsted — pluss {activeScrapedSources.length} markedsindekser
+                (Drewry, Xeneta, ISM) hentet direkte fra kildenes egne sider siden de
+                ikke har RSS. Alt oppsummeres nøytralt uten å publisere rå tekst fra
+                kildene.
               </p>
             </div>
 
@@ -273,6 +279,29 @@ export default async function Home({ searchParams }: PageProps) {
               </p>
               <ul className="flex flex-col">
                 {internationalSources.map((s) => (
+                  <li key={s.slug}>
+                    <Link
+                      href={sourceLink(s.name)}
+                      className={`flex items-center justify-between gap-2 rounded px-2 py-1 text-[0.83rem] leading-tight transition-colors ${
+                        source === s.name
+                          ? "bg-accent/10 text-accent font-medium"
+                          : "text-foreground/80 hover:bg-accent/5 hover:text-accent"
+                      }`}
+                    >
+                      <span className="truncate">{s.name}</span>
+                      <span className="text-xs text-muted shrink-0">
+                        {countBySource.get(s.name) ?? 0}
+                      </span>
+                    </Link>
+                  </li>
+                ))}
+              </ul>
+
+              <p className="text-[0.7rem] font-semibold uppercase tracking-wide text-muted mt-3 mb-1">
+                Markedsindekser
+              </p>
+              <ul className="flex flex-col">
+                {activeScrapedSources.map((s) => (
                   <li key={s.slug}>
                     <Link
                       href={sourceLink(s.name)}
