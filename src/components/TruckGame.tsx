@@ -42,7 +42,7 @@ function TruckRoad({ total, current }: { total: number; current: number }) {
       </div>
       <div
         className="absolute -top-6 text-2xl transition-all duration-500 ease-out"
-        style={{ left: `calc(${progress}% - 14px)` }}
+        style={{ left: `calc(${progress}% - 14px)`, transform: "scaleX(-1)" }}
         aria-hidden
       >
         🚚
