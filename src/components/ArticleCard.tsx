@@ -19,23 +19,61 @@ export interface ArticleCardData {
   concepts: { slug: string; whyRelevant: string }[];
 }
 
+// A native title="" tooltip is too small/unstyled to actually show a
+// definition + per-article explanation, and doesn't work on touch at all.
+// This shows a real detail panel instead, opened by click (works on mouse
+// and touch). It renders inline right below the badge row — not as an
+// absolutely-positioned popover — because the card's own overflow-hidden
+// (needed elsewhere for its rounded corners/collapse animation) would
+// clip anything positioned outside its box.
 function ConceptBadges({ concepts }: { concepts: ArticleCardData["concepts"] }) {
+  const [openSlug, setOpenSlug] = useState<string | null>(null);
   if (concepts.length === 0) return null;
+
+  const resolved = concepts
+    .map((c) => ({ ...c, concept: findConcept(c.slug) }))
+    .filter((c): c is typeof c & { concept: NonNullable<typeof c.concept> } => Boolean(c.concept));
+  const open = resolved.find((c) => c.slug === openSlug);
+
   return (
-    <div className="flex flex-wrap gap-1.5 mt-3">
-      {concepts.map((c) => {
-        const concept = findConcept(c.slug);
-        if (!concept) return null;
-        return (
-          <span
-            key={c.slug}
-            title={`${concept.definition}\n\nI denne saken: ${c.whyRelevant}`}
-            className="inline-flex items-center rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[0.7rem] font-medium text-accent cursor-help"
-          >
-            {concept.name}
-          </span>
-        );
-      })}
+    <div className="mt-3">
+      <div className="flex flex-wrap gap-1.5">
+        {resolved.map((c) => {
+          const isOpen = openSlug === c.slug;
+          return (
+            <button
+              key={c.slug}
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setOpenSlug(isOpen ? null : c.slug);
+              }}
+              aria-expanded={isOpen}
+              className={`inline-flex items-center rounded-full border px-2 py-0.5 text-[0.7rem] font-medium transition-colors cursor-pointer ${
+                isOpen
+                  ? "border-accent bg-accent text-accent-foreground"
+                  : "border-accent/30 bg-accent/5 text-accent hover:bg-accent/10"
+              }`}
+            >
+              {c.concept.name}
+            </button>
+          );
+        })}
+      </div>
+
+      {open && (
+        <div
+          onClick={(e) => e.stopPropagation()}
+          className="mt-2 rounded-lg border border-card-border bg-background/60 p-3 text-left"
+        >
+          <p className="text-xs font-bold text-foreground mb-1">{open.concept.name}</p>
+          <p className="text-xs leading-relaxed text-foreground/80">{open.concept.definition}</p>
+          <p className="text-xs leading-relaxed text-foreground/70 mt-2 pt-2 border-t border-card-border">
+            <span className="font-semibold text-accent">I denne saken: </span>
+            {open.whyRelevant}
+          </p>
+        </div>
+      )}
     </div>
   );
 }
@@ -75,9 +113,18 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
         }}
         aria-hidden
       />
-      <button
-        type="button"
+      {/* A <div> here, not <button> — the concept badges below are real
+          buttons (for a click-to-open popover), and buttons can't nest. */}
+      <div
+        role="button"
+        tabIndex={0}
         onClick={() => setExpanded((v) => !v)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            setExpanded((v) => !v);
+          }
+        }}
         aria-expanded={expanded}
         className={`w-full text-left pt-4 px-4 sm:pt-5 sm:px-5 cursor-pointer ${
           expanded && !isShort ? "pb-0" : "pb-4 sm:pb-5"
@@ -124,7 +171,7 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
         </p>
 
         <ConceptBadges concepts={article.concepts} />
-      </button>
+      </div>
 
       {!isShort && (
         <div
