@@ -190,6 +190,41 @@ export const concepts: Concept[] = [
     definition:
       "En sjelden, ekstrem og vanskelig-å-forutse hendelse med stor konsekvens (f.eks. en pandemi eller en blokkert kanal) som tradisjonelle risikomodeller typisk ikke fanger opp på forhånd.",
   },
+  {
+    slug: "risikomatrise",
+    name: "Risikomatrise",
+    category: "risiko_kvalitet",
+    definition:
+      "Et visuelt verktøy (rutenett) som plotter risikoer etter sannsynlighet og konsekvens (risiko = sannsynlighet × konsekvens), slik at de mest kritiske risikoene — de i den røde sonen — lett kan skilles fra dem som kan vente.",
+  },
+  {
+    slug: "fmea",
+    name: "FMEA (Failure Mode and Effects Analysis)",
+    category: "risiko_kvalitet",
+    definition:
+      "En systematisk metode for å identifisere mulige feilmåter i en prosess eller et produkt, og deres konsekvenser, FØR de faktisk skjer — slik at man kan sette inn tiltak i forkant i stedet for å reagere etterpå.",
+  },
+  {
+    slug: "bow-tie-analyse",
+    name: "Bow-tie-analyse",
+    category: "risiko_kvalitet",
+    definition:
+      "Et risikoverktøy som visualiserer en uønsket hendelse i midten, med mulige årsaker på den ene siden og mulige konsekvenser på den andre — og hvilke barrierer/tiltak som finnes for å forhindre årsakene eller begrense konsekvensene.",
+  },
+  {
+    slug: "rotarsaksanalyse",
+    name: "Rotårsaksanalyse",
+    category: "risiko_kvalitet",
+    definition:
+      "Å grave bak et synlig avvik eller problem for å finne den underliggende, egentlige årsaken — ikke bare symptomet — slik at forbedringstiltak treffer det som faktisk forårsaker problemet og hindrer at det gjentar seg.",
+  },
+  {
+    slug: "beslutningstre-og-forventet-verdi",
+    name: "Beslutningstre og forventet verdi",
+    category: "risiko_kvalitet",
+    definition:
+      "En strukturert måte å analysere en beslutning under usikkerhet på: kartlegge alternativene, sannsynlighetene for ulike utfall og konsekvensene av hvert, for å komme frem til det valget som gir best forventet resultat over tid.",
+  },
 
   // --- Strategi og organisasjon --------------------------------------------
   {
@@ -226,6 +261,20 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Forsyningskjeder der AI-drevne systemer i økende grad kan overvåke, beslutte og handle selvstendig — f.eks. automatisk justere bestillinger eller ruter uten at et menneske griper inn i hvert steg.",
+  },
+  {
+    slug: "operasjonelle-trade-offs",
+    name: "Operasjonelle trade-offs",
+    category: "strategi_organisasjon",
+    definition:
+      "Den grunnleggende avveiningen i operasjonsstrategi mellom kostnad, kvalitet, fleksibilitet og hastighet — man kan sjelden vinne på alle fire samtidig, og det å bli bedre på én dimensjon krever ofte å gi noe på en annen. Gode prosessforbedringer (f.eks. Lean) kan flytte grensen for hva som er mulig, men fjerner ikke avveiningen helt.",
+  },
+  {
+    slug: "operasjonelle-konkurranseprioriteringer",
+    name: "Operasjonelle konkurranseprioriteringer",
+    category: "strategi_organisasjon",
+    definition:
+      "De dimensjonene (pris/kostnad, kvalitet, leveringshastighet, pålitelighet, fleksibilitet) en virksomhet bevisst velger å prioritere og konkurrere på gjennom hvordan den faktisk drives — ikke alt kan være førsteprioritet samtidig.",
   },
 ];
 
