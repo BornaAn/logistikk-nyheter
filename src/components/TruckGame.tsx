@@ -158,6 +158,13 @@ export function TruckGame() {
 
       <TruckRoad total={questions.length} current={current} />
 
+      <div className="rounded-md border border-gold/40 bg-gold/10 px-3.5 py-2.5 mb-4">
+        <p className="text-xs font-semibold uppercase tracking-wide text-gold mb-0.5">
+          Flaskehalsen
+        </p>
+        <p className="text-sm text-foreground/85 leading-snug">{question.scenario}</p>
+      </div>
+
       <p className="text-sm text-muted mb-1.5">Hva betyr dette begrepet?</p>
       <h3 className="font-serif text-xl font-bold mb-4">{question.prompt}</h3>
 
