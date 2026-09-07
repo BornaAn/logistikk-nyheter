@@ -122,6 +122,8 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
         <p className="text-[0.95rem] leading-relaxed text-foreground/90 mt-2">
           {expanded && !isShort ? teaserBase : teaser}
         </p>
+
+        <ConceptBadges concepts={article.concepts} />
       </button>
 
       {!isShort && (
@@ -135,8 +137,6 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
               <p className="text-[0.95rem] leading-relaxed text-foreground/90">
                 {article.aiSummary.slice(teaserBase.length).trimStart()}
               </p>
-
-              <ConceptBadges concepts={article.concepts} />
 
               <div className="mt-3.5 pt-3 border-t border-card-border">
                 <a
@@ -159,7 +159,6 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
 
       {isShort && (
         <div className="px-4 sm:px-5 pb-4 sm:pb-5 -mt-1">
-          <ConceptBadges concepts={article.concepts} />
           <div className="pt-3 border-t border-card-border">
             <a
               href={article.articleUrl}
