@@ -1,12 +1,106 @@
-import { concepts } from "./concepts";
+import { concepts, type Concept } from "./concepts";
 
 export interface QuizQuestion {
   conceptSlug: string;
+  /** How to read `prompt`: "definition" asks what a named concept means
+   * (options are definitions); "situation" describes a scenario and asks
+   * which concept it illustrates (options are concept names) — harder,
+   * since it takes recognizing the concept in a situation rather than
+   * matching a name to its dictionary definition. */
+  kind: "definition" | "situation";
   prompt: string;
   options: string[];
   correctIndex: number;
   scenario: string;
 }
+
+/** Short invented-but-realistic situations that illustrate each concept in
+ * action, used for "situation" questions ("which concept describes this?").
+ * Deliberately don't name the concept — that's what's being guessed. */
+const CONCEPT_EXAMPLES: Record<string, string> = {
+  tidsserieanalyse:
+    "Et transportselskap plotter ukentlige fraktvolumer for de siste tre årene for å se etter et gjentakende mønster før jul.",
+  prognosemodell:
+    "Et lager bruker historiske salgstall til å beregne hvor mange paller de bør bestille inn til neste måned.",
+  "bullwhip-effekten":
+    "En butikk bestiller litt ekstra for sikkerhets skyld. Grossisten ser økt etterspørsel og dobler sin bestilling til fabrikken, som igjen tredobler produksjonen.",
+  "monte-carlo-simulering":
+    "Et rederi kjører tusenvis av simulerte scenarioer med tilfeldige forsinkelser for å anslå sannsynligheten for at et skip ankommer for sent.",
+  "digital-tvilling":
+    "Et logistikksenter tester en ny bemanningsplan i en virtuell kopi av lageret før den innføres i den faktiske driften.",
+  kapasitetsanalyse:
+    "En terminal kartlegger hvor mange containere kranene faktisk klarer å håndtere per time, for å finne ut hvor flaskehalsen ligger.",
+  kpi: "Ledelsen følger med på leveringspresisjonen hver uke som et fast tall for å vurdere om driften går bra.",
+  dashboard: "Driftslederen ser status for alle biler, ordre og avvik samlet på én skjerm i sanntid.",
+  beslutningsstottesystem:
+    "Et system samler data fra flere kilder og foreslår automatisk hvilken rute som bør velges i dag.",
+  "balanced-scorecard":
+    "Ledelsen følger opp ikke bare økonomiske tall, men også kundetilfredshet, interne prosesser og medarbeiderutvikling i samme rapport.",
+  "ledende-og-etterslepende-indikatorer":
+    "Et selskap ser at ordreinngangen stiger denne uken, og forventer at omsetningen vil vise det samme om noen måneder.",
+  "ledetid-og-syklustid":
+    "En kunde vil vite hvor lang tid det tar fra bestillingen legges til varen faktisk er levert på døren.",
+  maskinlaering:
+    "Et system lærer å kjenne igjen mønstre i tidligere leveranser for å forutsi hvilke ordre som mest sannsynlig blir forsinket.",
+  "regresjon-klassifikasjon":
+    "En modell skal enten anslå den nøyaktige fraktprisen i kroner, eller bare avgjøre om forsendelsen blir forsinket eller ikke.",
+  "nevrale-nettverk":
+    "Et system med mange lag av kunstige noder lærer å gjenkjenne skadede pakker på bilder fra lagerets kameraer.",
+  nlp: "Et system leser gjennom tusenvis av kundeklager automatisk for å finne ut hvilke ord som går igjen oftest.",
+  "anomali-deteksjon":
+    "Et overvåkingssystem varsler automatisk når en forsendelse plutselig tar en helt uvanlig rute sammenlignet med tidligere leveranser.",
+  api: "To ulike systemer, ett hos rederiet og ett hos speditøren, utveksler sporingsdata automatisk uten at noen taster inn tall manuelt.",
+  sanntidsdata: "Sjåføren ser nøyaktig hvor lastebilen befinner seg akkurat nå, ikke bare hvor den var i går.",
+  datakvalitet:
+    "Før tallene brukes i en analyse, sjekker teamet at adressene er riktig skrevet og at ingen datofelt mangler.",
+  "sky-og-dataplattformer":
+    "Flere avdelinger lagrer og henter data fra samme sentrale, skybaserte system i stedet for hver sin lokale database.",
+  "statistisk-prosesskontroll":
+    "En fabrikk følger et kontrollkart som varsler automatisk hvis en måling beveger seg utenfor det normale variasjonsområdet.",
+  "six-sigma": "Et team bruker et strukturert dataprogram for å redusere antall feilleveranser fra 3 % til under 1 %.",
+  "risiko-og-resiliens":
+    "Etter en lang periode med forsinkelser bygger selskapet opp ekstra buffer og alternative leverandører for å tåle neste forstyrrelse bedre.",
+  "black-swan-hendelse":
+    "En global hendelse ingen så komme stenger en hel handelsrute i flere uker og overrasker alle risikomodellene.",
+  dmaic:
+    "Et team definerer problemet, måler dagens tilstand, finner årsaken, tester et tiltak og følger opp at forbedringen faktisk holder seg over tid.",
+  risikomatrise:
+    "Risikoene plottes i et rutenett etter hvor sannsynlige og hvor alvorlige de er, slik at de mest kritiske skiller seg tydelig ut.",
+  fmea: "Før en ny prosess innføres, går teamet gjennom alle måtene den kan feile på og hvor alvorlige konsekvensene ville vært.",
+  "bow-tie-analyse":
+    "En uønsket hendelse tegnes i midten av et diagram, med årsaker på den ene siden og konsekvenser på den andre, sammen med barrierene som skal stoppe dem.",
+  rotarsaksanalyse:
+    "I stedet for å bare fikse symptomet, spør teamet «hvorfor» gjentatte ganger til de finner den egentlige årsaken til problemet.",
+  "beslutningstre-og-forventet-verdi":
+    "Et team kartlegger alle mulige utfall og sannsynlighetene for hver av dem for å regne ut hvilket valg som gir best resultat i gjennomsnitt.",
+  "digital-transformasjon":
+    "Et selskap endrer ikke bare hvilke verktøy de bruker, men også hvordan hele organisasjonen jobber, etter å ha tatt i bruk ny teknologi.",
+  "konkurransefortrinn-gjennom-data":
+    "En virksomhet klarer å tilby raskere og mer presise leveranser enn konkurrentene fordi de utnytter dataene sine bedre.",
+  "baerekraft-og-teknologi":
+    "Et selskap bruker data til å planlegge ruter som både reduserer utslipp og holder kostnadene nede.",
+  "etikk-og-ai":
+    "Et team stiller spørsmål ved om en automatisert modell favoriserer bestemte leverandører uten at noen egentlig hadde tenkt over det.",
+  "autonome-forsyningskjeder":
+    "Et system justerer automatisk bestillinger og ruter basert på sanntidsdata, uten at et menneske må godkjenne hvert eneste steg.",
+  "operasjonelle-trade-offs":
+    "Å love raskere levering betyr at selskapet må gi litt slipp på hvor lavt de kan holde kostnadene.",
+  "operasjonelle-konkurranseprioriteringer":
+    "En bedrift bestemmer seg bevisst for å konkurrere på pålitelighet fremfor pris, og bygger driften rundt det.",
+  "lokal-optimalisering":
+    "Ett lager kutter egne kostnader ved å redusere bufferlager, men gjør dermed hele forsyningskjeden mer sårbar for forsinkelser.",
+  silotenkning:
+    "To avdelinger jobber mot samme mål, men deler ikke informasjon med hverandre og ender opp med motstridende planer.",
+  pdca: "Et team planlegger et tiltak, prøver det ut, sjekker om det faktisk virket, og justerer rutinen før de går videre til neste forbedring.",
+  obeya: "Et tverrfaglig team samles rundt tavler i et felles rom for å diskutere status, avvik og tiltak sammen.",
+  "visuell-styring":
+    "Status og avvik vises åpent på en tavle for alle å se, i stedet for å ligge gjemt i en rapport bare lederen leser.",
+  dsrp: "Et team stopper opp og spør hva problemet egentlig er, hvordan delene henger sammen, og hvilke andre perspektiver som mangler før de konkluderer.",
+  "a3-metodikk":
+    "Hele problemstillingen, analysen og tiltaket samles på én enkelt side for å tvinge frem klarhet fremfor lange rapporter.",
+  verdistromsanalyse:
+    "Et team kartlegger alle stegene en vare går gjennom for å finne ut hvor det faktisk skapes verdi og hvor det bare er venting.",
+};
 
 /** Flavor text for each daily bottleneck — invented but realistic
  * logistics scenarios, not tied to any real event or article. Purely
@@ -38,11 +132,6 @@ const BOTTLENECK_SCENARIOS = [
   "Et fly med hasteforsendelser er forsinket, og omlasting til bil må vente.",
 ];
 
-/** One scenario per question in a given day's route, no repeats. */
-function pickScenarios(count: number, rand: () => number): string[] {
-  return seededShuffle(BOTTLENECK_SCENARIOS, rand).slice(0, count);
-}
-
 /** Deterministic PRNG seeded from a string (mulberry32) — same seed always
  * produces the same sequence, so "today's" quiz is identical for every
  * visitor without needing a database, and different every day. */
@@ -71,34 +160,56 @@ function seededShuffle<T>(items: T[], rand: () => number): T[] {
   return arr;
 }
 
-/** One question per concept: "what does X mean?" with the real definition
- * plus three decoy definitions drawn from other concepts. Scenario text is
- * attached afterwards, once the day's subset is picked (see
- * getDailyChallenge) — it's flavor per route position, not per concept. */
-function buildQuestionPool(rand: () => number): Omit<QuizQuestion, "scenario">[] {
-  return concepts.map((concept) => {
-    const decoyPool = concepts.filter((c) => c.slug !== concept.slug);
-    const decoys = seededShuffle(decoyPool, rand).slice(0, 3);
-    const correctText = concept.definition;
-    const options = seededShuffle([correctText, ...decoys.map((d) => d.definition)], rand);
-    return {
-      conceptSlug: concept.slug,
-      prompt: concept.name,
-      options,
-      correctIndex: options.indexOf(correctText),
-    };
-  });
+function pickDecoys(exclude: Concept, rand: () => number): Concept[] {
+  return seededShuffle(
+    concepts.filter((c) => c.slug !== exclude.slug),
+    rand,
+  ).slice(0, 3);
+}
+
+function buildDefinitionQuestion(concept: Concept, rand: () => number): Omit<QuizQuestion, "scenario"> {
+  const decoys = pickDecoys(concept, rand);
+  const correctText = concept.definition;
+  const options = seededShuffle([correctText, ...decoys.map((d) => d.definition)], rand);
+  return {
+    conceptSlug: concept.slug,
+    kind: "definition",
+    prompt: concept.name,
+    options,
+    correctIndex: options.indexOf(correctText),
+  };
+}
+
+function buildSituationQuestion(concept: Concept, rand: () => number): Omit<QuizQuestion, "scenario"> {
+  const decoys = pickDecoys(concept, rand);
+  const correctText = concept.name;
+  const options = seededShuffle([correctText, ...decoys.map((d) => d.name)], rand);
+  return {
+    conceptSlug: concept.slug,
+    kind: "situation",
+    prompt: CONCEPT_EXAMPLES[concept.slug] ?? concept.definition,
+    options,
+    correctIndex: options.indexOf(correctText),
+  };
 }
 
 /** Today's route: `count` questions, same for every visitor on a given
- * calendar day (UTC date string as the seed), different each day. */
+ * calendar day (UTC date string as the seed), different each day. Mixes
+ * "what does X mean" and the harder "which concept is this?" question
+ * types — the latter only for concepts with a written example scenario. */
 export function getDailyChallenge(date: Date, count = 5): QuizQuestion[] {
   const seed = date.toISOString().slice(0, 10);
   const rand = seededRandom(seed);
-  const pool = buildQuestionPool(rand);
-  const questions = seededShuffle(pool, rand).slice(0, count);
-  const scenarios = pickScenarios(count, rand);
-  return questions.map((q, i) => ({ ...q, scenario: scenarios[i] }));
+  const chosen = seededShuffle(concepts, rand).slice(0, count);
+  const scenarios = seededShuffle(BOTTLENECK_SCENARIOS, rand).slice(0, count);
+
+  return chosen.map((concept, i) => {
+    const useSituation = Boolean(CONCEPT_EXAMPLES[concept.slug]) && rand() < 0.5;
+    const question = useSituation
+      ? buildSituationQuestion(concept, rand)
+      : buildDefinitionQuestion(concept, rand);
+    return { ...question, scenario: scenarios[i] };
+  });
 }
 
 export function todaysDateKey(): string {

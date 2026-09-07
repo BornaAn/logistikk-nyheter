@@ -165,8 +165,17 @@ export function TruckGame() {
         <p className="text-sm text-foreground/85 leading-snug">{question.scenario}</p>
       </div>
 
-      <p className="text-sm text-muted mb-1.5">Hva betyr dette begrepet?</p>
-      <h3 className="font-serif text-xl font-bold mb-4">{question.prompt}</h3>
+      {question.kind === "definition" ? (
+        <>
+          <p className="text-sm text-muted mb-1.5">Hva betyr dette begrepet?</p>
+          <h3 className="font-serif text-xl font-bold mb-4">{question.prompt}</h3>
+        </>
+      ) : (
+        <>
+          <p className="text-sm text-muted mb-1.5">Hvilket begrep beskriver denne situasjonen?</p>
+          <p className="font-serif text-lg font-semibold leading-snug mb-4">{question.prompt}</p>
+        </>
+      )}
 
       <div className="flex flex-col gap-2">
         {question.options.map((option, i) => {
