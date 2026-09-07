@@ -133,10 +133,10 @@ export default async function Home({ searchParams }: PageProps) {
           aria-hidden
         />
         <div className="mx-auto w-full max-w-6xl px-4 py-4">
-          <div className="flex items-center justify-between gap-4 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2 mb-4">
             <HomeLink>
               <Logo />
-              <div>
+              <div className="min-w-0">
                 <h1
                   className="font-serif text-lg sm:text-xl font-bold tracking-tight leading-none bg-clip-text text-transparent"
                   style={{
@@ -154,12 +154,12 @@ export default async function Home({ searchParams }: PageProps) {
                 </p>
               </div>
             </HomeLink>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <Link
                 href="/spill"
-                className="rounded-md border border-card-border px-3 py-1.5 text-sm text-foreground/80 hover:text-accent hover:border-accent transition-all active:scale-95 shrink-0"
+                className="rounded-md border border-card-border px-2.5 sm:px-3 py-1.5 text-xs sm:text-sm text-foreground/80 hover:text-accent hover:border-accent transition-all active:scale-95 shrink-0"
               >
-                🚚 Dagens spill
+                🚚 <span className="hidden sm:inline">Dagens </span>spill
               </Link>
               <ThemeToggle />
             </div>

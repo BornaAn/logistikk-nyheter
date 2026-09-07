@@ -19,10 +19,10 @@ export default function SpillPage() {
           aria-hidden
         />
         <div className="mx-auto w-full max-w-6xl px-4 py-4">
-          <div className="flex items-center justify-between gap-4">
+          <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
             <HomeLink>
               <Logo />
-              <div>
+              <div className="min-w-0">
                 <h1
                   className="font-serif text-lg sm:text-xl font-bold tracking-tight leading-none bg-clip-text text-transparent"
                   style={{
