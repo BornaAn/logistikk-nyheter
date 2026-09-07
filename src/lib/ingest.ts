@@ -7,6 +7,26 @@ import { fetchFeed, type FeedItem } from "./rss";
 import { extractArticleText } from "./extract";
 import { summarizeArticle } from "./summarize";
 
+/** Runs `fn` over `items` with at most `concurrency` in flight at once.
+ * Each item's own DB write only touches its own row, so running several
+ * Claude calls (the slowest single step in the pipeline) in parallel is
+ * safe — it just shrinks the wall-clock time of a run, which matters given
+ * Vercel Hobby's real 60s function ceiling. */
+async function mapWithConcurrency<T>(
+  items: T[],
+  concurrency: number,
+  fn: (item: T) => Promise<void>,
+): Promise<void> {
+  let next = 0;
+  async function worker() {
+    while (next < items.length) {
+      const item = items[next++];
+      await fn(item);
+    }
+  }
+  await Promise.all(Array.from({ length: Math.min(concurrency, items.length) }, worker));
+}
+
 /** What the ingest pipeline actually needs from a source, regardless of
  * whether it came from sources.ts (RSS) or scrapers.ts (custom scrape). */
 type IngestSource = Pick<Source | ScrapedSource, "name" | "homepageUrl" | "defaultCategory"> & {
@@ -15,20 +35,24 @@ type IngestSource = Pick<Source | ScrapedSource, "name" | "homepageUrl" | "defau
 };
 
 // Cost/safety controls for the Claude API step.
-const MAX_SUMMARIES_PER_RUN = 60;
+//
+// Vercel's Hobby plan hard-caps serverless function execution at 60s
+// regardless of the `maxDuration` route export (that only matters on Pro+) —
+// there is no error, no thrown exception, the function is just killed
+// mid-request. Since every article write commits individually but FetchLog
+// is only written at the very end, a kill shows up as: articles keep
+// appearing, but no new FetchLog row, and summaries stop progressing. That's
+// exactly what happened once source count grew past ~30 (RSS + scraper
+// listing fetches alone started eating a large chunk of the 60s). These caps
+// were raised to 60/60 back when there were 14 sources and comfortably fit;
+// they don't anymore. Pulled back down to fit real work (parallel feed
+// fetch + sequential extraction + sequential Claude calls) inside 60s with
+// margin. A once-daily cron at this size can't clear a large backlog by
+// itself — see README for the external multi-trigger-per-day setup.
+const MAX_SUMMARIES_PER_RUN = 12;
 const MAX_ARTICLE_AGE_HOURS_FOR_SUMMARY = 24 * 7; // don't burn quota backfilling very old items
 const RAW_EXCERPT_MAX_LENGTH = 20000;
-
-// Extraction (full-page scrape per article) is the slow step — capping how
-// many new articles we create per run keeps each cron invocation well
-// within a serverless function's time limit. A large backlog (e.g. the
-// very first run) just gets picked up gradually over the next few runs,
-// since already-seen URLs are skipped on every pass. A first production
-// run at 30/30 completed successfully well past the 280s a client-side
-// curl waited on, so this is raised to 60/60 for better same-day coverage
-// across 14 sources on the once-daily cron — revisit if a run ever times
-// out (check Vercel's function logs for the /api/cron invocation).
-const MAX_NEW_ARTICLES_PER_RUN = 60;
+const MAX_NEW_ARTICLES_PER_RUN = 12;
 
 export interface IngestResult {
   sourcesOk: number;
@@ -59,6 +83,13 @@ async function ingestNewArticles(): Promise<{
   // sources and custom-scraped sources (market indices etc.) are merged
   // into the same list here — downstream code doesn't need to know which
   // is which.
+  //
+  // Run all fetches concurrently rather than one-by-one: with ~35+ sources
+  // now (some of them full-page scrapes, not just small RSS files),
+  // fetching sequentially could alone eat a large share of Vercel's 60s
+  // (Hobby plan) function budget before extraction/summarization even
+  // start. In parallel this phase is bounded by the single slowest source
+  // instead of the sum of all of them.
   const perSource: { source: IngestSource; items: FeedItem[] }[] = [];
 
   const fetchTasks: { source: IngestSource; fetch: () => Promise<FeedItem[]> }[] = [
@@ -68,20 +99,26 @@ async function ingestNewArticles(): Promise<{
       .map((source) => ({ source, fetch: source.fetchItems })),
   ];
 
-  for (const { source, fetch } of fetchTasks) {
-    try {
+  const fetchResults = await Promise.allSettled(
+    fetchTasks.map(async ({ source, fetch }) => {
       let items = await fetch();
-      sourcesOk++;
-      found += items.length;
-
       if (source.keywordFilter) {
         items = items.filter((i) => KEYWORD_FILTER.test(`${i.title} ${i.rssText}`));
       }
+      return { source, items };
+    }),
+  );
 
-      perSource.push({ source, items });
-    } catch (err) {
+  for (let i = 0; i < fetchResults.length; i++) {
+    const result = fetchResults[i];
+    const { source } = fetchTasks[i];
+    if (result.status === "fulfilled") {
+      sourcesOk++;
+      found += result.value.items.length;
+      perSource.push(result.value);
+    } else {
       sourcesFailed++;
-      errors.push(`[${source.name}] feed-henting feilet: ${(err as Error).message}`);
+      errors.push(`[${source.name}] feed-henting feilet: ${(result.reason as Error).message}`);
     }
   }
 
@@ -103,51 +140,57 @@ async function ingestNewArticles(): Promise<{
     queue: items.filter((i) => !existingUrls.has(i.articleUrl)),
   }));
 
-  // Round-robin one candidate per source per round, so every source gets
-  // a fair share of the cap instead of whichever source comes first in
-  // the list.
+  // Round-robin one candidate per source per round, so every source gets a
+  // fair share of the cap instead of whichever source comes first in the
+  // list. This pass only *selects* which items to process — no I/O — so the
+  // actual extraction (the slow part, one real HTTP fetch per article) can
+  // run concurrently below instead of one at a time.
+  const selected: { source: IngestSource; item: FeedItem }[] = [];
   let progressed = true;
-  while (created < MAX_NEW_ARTICLES_PER_RUN && progressed) {
+  while (selected.length < MAX_NEW_ARTICLES_PER_RUN && progressed) {
     progressed = false;
 
     for (const { source, queue } of queues) {
-      if (created >= MAX_NEW_ARTICLES_PER_RUN) break;
+      if (selected.length >= MAX_NEW_ARTICLES_PER_RUN) break;
       const item = queue.shift();
       if (!item) continue;
       progressed = true;
-
-      try {
-        // A scraper that already captured the real content while building
-        // the item list (e.g. Drewry's same-URL weekly update) skips
-        // re-fetching articleUrl — that content already is the complete
-        // public commentary, not a preview, so it's never "limited".
-        const extracted = item.fullText
-          ? { text: item.fullText, isFullText: true }
-          : await extractArticleText(item.articleUrl, item.title, item.rssText);
-        const isLimited = Boolean(source.paywalled) || !extracted.isFullText;
-
-        await prisma.article.create({
-          data: {
-            title: item.title,
-            sourceName: source.name,
-            sourceUrl: source.homepageUrl,
-            articleUrl: item.articleUrl,
-            publishedAt: item.publishedAt,
-            rawExcerpt: extracted.text.slice(0, RAW_EXCERPT_MAX_LENGTH) || null,
-            accessLevel: isLimited ? "limited" : "full",
-            category: source.defaultCategory,
-            summaryStatus: extracted.text ? "pending" : "failed",
-            summaryError: extracted.text ? null : "Ingen tekst kunne hentes ut",
-          },
-        });
-        created++;
-      } catch (err) {
-        errors.push(
-          `[${source.name}] "${item.title}" kunne ikke lagres: ${(err as Error).message}`,
-        );
-      }
+      selected.push({ source, item });
     }
   }
+
+  await mapWithConcurrency(selected, 5, async ({ source, item }) => {
+    try {
+      // A scraper that already captured the real content while building
+      // the item list (e.g. Drewry's same-URL weekly update) skips
+      // re-fetching articleUrl — that content already is the complete
+      // public commentary, not a preview, so it's never "limited".
+      const extracted = item.fullText
+        ? { text: item.fullText, isFullText: true }
+        : await extractArticleText(item.articleUrl, item.title, item.rssText);
+      const isLimited = Boolean(source.paywalled) || !extracted.isFullText;
+
+      await prisma.article.create({
+        data: {
+          title: item.title,
+          sourceName: source.name,
+          sourceUrl: source.homepageUrl,
+          articleUrl: item.articleUrl,
+          publishedAt: item.publishedAt,
+          rawExcerpt: extracted.text.slice(0, RAW_EXCERPT_MAX_LENGTH) || null,
+          accessLevel: isLimited ? "limited" : "full",
+          category: source.defaultCategory,
+          summaryStatus: extracted.text ? "pending" : "failed",
+          summaryError: extracted.text ? null : "Ingen tekst kunne hentes ut",
+        },
+      });
+      created++;
+    } catch (err) {
+      errors.push(
+        `[${source.name}] "${item.title}" kunne ikke lagres: ${(err as Error).message}`,
+      );
+    }
+  });
 
   return { sourcesOk, sourcesFailed, found, created, errors };
 }
@@ -200,7 +243,7 @@ async function runSummaryQueue(): Promise<{
   let failed = 0;
   const errors: string[] = [];
 
-  for (const article of pending) {
+  await mapWithConcurrency(pending, 4, async (article) => {
     try {
       const result = await summarizeArticle({
         title: article.title,
@@ -226,7 +269,7 @@ async function runSummaryQueue(): Promise<{
             summaryError: `Utilstrekkelig/feil kildeinnhold: ${result.summary}`,
           },
         });
-        continue;
+        return;
       }
 
       await prisma.article.update({
@@ -249,7 +292,7 @@ async function runSummaryQueue(): Promise<{
         data: { summaryStatus: "failed", summaryError: message },
       });
     }
-  }
+  });
 
   return { ok, failed, errors };
 }
