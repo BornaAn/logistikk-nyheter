@@ -298,6 +298,26 @@ async function runSummaryQueue(): Promise<{
 }
 
 /**
+ * runSummaryQueue only ever considers articles newer than
+ * MAX_ARTICLE_AGE_HOURS_FOR_SUMMARY — anything older that's still "pending"
+ * (e.g. from before that source's turn came up in the round-robin) will
+ * never be picked up again and would otherwise sit there forever, making
+ * the pending count a mix of "will process soon" and "permanently
+ * abandoned". A single cheap updateMany keeps that count meaningful.
+ */
+async function expireStalePending(): Promise<number> {
+  const cutoff = new Date(Date.now() - MAX_ARTICLE_AGE_HOURS_FOR_SUMMARY * 60 * 60 * 1000);
+  const result = await prisma.article.updateMany({
+    where: { summaryStatus: "pending", publishedAt: { lt: cutoff } },
+    data: {
+      summaryStatus: "failed",
+      summaryError: "For gammel til å bli oppsummert (utenfor retry-vinduet)",
+    },
+  });
+  return result.count;
+}
+
+/**
  * Full ingestion pass: pull new articles from every enabled feed, then run
  * the AI-summary queue over whatever is pending. Errors from individual
  * sources or articles are collected, not thrown, so one bad feed/article
@@ -306,6 +326,7 @@ async function runSummaryQueue(): Promise<{
 export async function runIngest(): Promise<IngestResult> {
   const fetchResult = await ingestNewArticles();
   const summaryResult = await runSummaryQueue();
+  await expireStalePending();
 
   const result: IngestResult = {
     sourcesOk: fetchResult.sourcesOk,

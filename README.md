@@ -61,10 +61,14 @@ Kjør den samme kommandoen på nytt når som helst for å hente nye saker —
 allerede lagrede artikler (samme `articleUrl`) blir aldri hentet eller
 oppsummert to ganger.
 
-## Deploy (gratis Vercel Hobby-plan, én kjøring i døgnet)
+## Deploy (gratis Vercel Hobby-plan + GitHub Actions)
 
 `vercel.json` kjører `/api/cron` én gang daglig, kl. 05:00 UTC
-(≈ 06–07 norsk tid), som passer innenfor Hobby-planens gratis cron-kvote.
+(≈ 06–07 norsk tid) via Vercel sin egen Cron Jobs-funksjon — det er alt
+Hobby-planens gratis cron-kvote tillater. Det holder ikke alene med så
+mange kilder (se under), så `.github/workflows/cron.yml` kaller det
+samme endepunktet på nytt hvert 20. minutt døgnet rundt via GitHub
+Actions i tillegg — helt gratis, ingen Vercel Pro nødvendig.
 
 ### Steg 1: GitHub
 
@@ -114,25 +118,43 @@ I prosjektets Settings → Environment Variables, legg til:
 ### Steg 4: Deploy
 
 Vercel deployer automatisk ved hver push til `main`. Etter første deploy kan
-du besøke prosjektets `.vercel.app`-URL — og fra da av kjører innhentingen
-helt automatisk hvert døgn, uten at du trenger å gjøre noe.
+du besøke prosjektets `.vercel.app`-URL.
+
+### Steg 5: GitHub Actions (den hyppige innhentingen)
+
+`.github/workflows/cron.yml` ligger allerede i repoet og trigger seg selv
+hvert 20. minutt — det eneste som gjenstår er å legge til den samme
+`CRON_SECRET`-verdien som en **repository secret** på GitHub (ikke samme
+sted som Vercels miljøvariabler — dette er et helt eget skjema): repoets
+**Settings → Secrets and variables → Actions → New repository secret**,
+navn `CRON_SECRET`, samme verdi som i Vercel. Uten dette svarer
+endepunktet 401 på hvert forsøk og workflowen feiler stille i bakgrunnen.
 
 ### Viktig å vite om gratisplanen
 
-- **Én kjøring i døgnet** betyr at jobben har et fast tak på antall nye
-  artikler og sammendrag den rekker per kjøring (`MAX_NEW_ARTICLES_PER_RUN` /
-  `MAX_SUMMARIES_PER_RUN` i [`src/lib/ingest.ts`](src/lib/ingest.ts), satt til
-  60/60). Med 14 aktive kilder kan det i perioder komme mer enn 60 nye saker
-  på ett døgn, og da henger jobben litt etter til neste dag tar resten. Vil
-  du ha alt med samme dag, er neste steg enten å øke grensene enda mer
-  (risikerer å treffe Vercel sin function-tidsgrense) eller gå til Vercel
-  Pro med hyppigere cron.
+- Vercel Hobby har en reell, hard grense på **60 sekunder** kjøretid per
+  funksjonskall, uansett hva `maxDuration` i koden sier (den grensen
+  gjelder først på Pro+). Hvis en kjøring bruker lenger tid enn det, blir
+  den drept av plattformen midt i — uten feilmelding, uten at
+  `FetchLog`-raden på slutten noensinne skrives. Det er derfor
+  `MAX_NEW_ARTICLES_PER_RUN` / `MAX_SUMMARIES_PER_RUN` i
+  [`src/lib/ingest.ts`](src/lib/ingest.ts) står på **12/12** og ikke høyere
+  — testet direkte mot produksjon: en kjøring med disse grensene tar
+  konsekvent under 30 sekunder, med god margin.
+- Vercel Hobbys egen Cron Jobs-funksjon tillater kun **én kjøring i
+  døgnet** — det er derfor GitHub Actions-workflowen (se steg 5) finnes:
+  den kaller det samme endepunktet hvert 20. minutt i stedet, helt gratis,
+  uten å måtte oppgradere til Vercel Pro.
 - Alle allerede lagrede artikler (samme `articleUrl`) hentes eller
-  oppsummeres aldri på nytt, uansett hvor sjelden jobben kjører.
+  oppsummeres aldri på nytt, uansett hvor ofte jobben kjører.
+- Innhentingen (feed-henting, uthenting av artikkeltekst og
+  Claude-oppsummering) kjører med begrenset samtidighet i stedet for én
+  kilde/artikkel om gangen — det er hovedgrunnen til at en kjøring med
+  35+ kilder likevel holder seg godt under 60-sekundersgrensen.
 - Innhentingen går i rundgang mellom kildene (ett kandidatforslag fra hver
   kilde om gangen, ikke én kilde fullstendig ferdig før neste) slik at en
-  kilde med mye trafikk (f.eks. FreightWaves) ikke spiser opp hele dagens
-  kvote før andre kilder rekker å bidra.
+  kilde med mye trafikk (f.eks. FreightWaves) ikke spiser opp hele
+  kvoten for én kjøring før andre kilder rekker å bidra.
 
 ## Kilder
 
@@ -150,9 +172,10 @@ Statens vegvesen, Kystverket, Sjøfartsdirektoratet, World Trade Organization
 TradeWinds, Logistikk Inside, MTLogistikk, Bloomberg, Freightos,
 Dagens Næringsliv (DN), Aftenposten (Økonomi), Avinor, Innovasjon Norge.
 
-**Pluss 3 kilder uten RSS i det hele tatt, hentet med egne scrapere** (se
+**Pluss 5 kilder uten RSS i det hele tatt, hentet med egne scrapere** (se
 "Markedsindekser og statistikk" lenger ned): Drewry World Container Index,
-Xeneta, ISM (Institute for Supply Management).
+Xeneta, ISM (Institute for Supply Management), Global Supply Chain Pressure
+Index (NY Fed), Baltic Dry Index.
 
 TradeWinds, Logistikk Inside, MTLogistikk og Bloomberg ble gjenfunnet ved
 en ny, grundigere verifiseringsrunde — alle fire var tidligere merket
@@ -239,7 +262,7 @@ mye ekte næringslivsstoff.
 ## Markedsindekser og statistikk
 
 Utover RSS-kilder henter [`src/lib/scrapers.ts`](src/lib/scrapers.ts) også
-inn kommentartekst fra tre markedsindekser som ikke har RSS i det hele
+inn kommentartekst fra fem markedsindekser som ikke har RSS i det hele
 tatt, men som publiserer ekte, offentlig lesbar analysetekst — ikke bare
 tall bak betalingsmur. Hver "scraper" returnerer data i nøyaktig samme
 form som en RSS-kilde ville gjort, så resten av rørledningen (dedup,
@@ -263,19 +286,27 @@ vite forskjellen:
   pressemeldingen (inkl. hele sitatet fra styrelederen) uten betalingsmur.
   Henter kun Manufacturing PMI og Services PMI fra nyhetsrom-listen deres,
   filtrert bort fra andre ISM-kunngjøringer.
+- **Global Supply Chain Pressure Index (NY Fed)** — selve siden er en
+  JS-drevet interaktiv grafikk uten tekst i HTML-en, men den laster en
+  liten, offentlig JSON-fil
+  (`.../data/gscpi/gscpi.json`) med nøyaktig den narrative
+  månedsbeskrivelsen — funnet via siden sine egne nettverkskall, et
+  stabilt, dokumentert dataendepunkt.
+- **Baltic Dry Index** — selve Baltic Exchange-indeksen er bak
+  betalingsmur, men Trading Economics speiler et substansielt,
+  server-rendret daglig analyseavsnitt (`#historical-desc h2#description`)
+  — ekte markedskommentar, ikke bare tallet.
 
-Alle tre ble verifisert direkte mot faktisk HTML-struktur (ikke antatt)
-før koden ble skrevet — se commit-historikken for detaljene som ble
-funnet på hver side.
+Alle fem ble verifisert direkte mot faktisk HTML/JSON-struktur (ikke
+antatt) før koden ble skrevet — se commit-historikken for detaljene som
+ble funnet på hver side.
 
-**Vurdert, men ikke bygget scraper for ennå** (dokumentert i
-`sources.ts` med grunn):
+**Vurdert, men ikke bygget scraper for** (dokumentert i `sources.ts` med
+grunn):
 
-| Kilde | Hvorfor ikke (ennå) |
+| Kilde | Hvorfor ikke |
 |---|---|
-| Kiel Trade Indicator | Ekte og offentlig, men uklar nåværende publiseringskadence — fant ingen Trade Indicator-spesifikk sak i de siste ~3 månedene med nyhetsoppføringer |
-| Global Supply Chain Pressure Index (NY Fed) | Offentlig og månedlig, men innholdet er en kort databeskrivelse (2 setninger), ikke en artikkel |
-| Baltic Dry Index | Selve indeksen er bak betalingsmur; Trading Economics har korte, generiske daglige notiser uten permalink per notis |
+| Kiel Trade Indicator | Bekreftet nedlagt — ingen Trade Indicator-spesifikk pressemelding siden 11. mars 2024 (verifisert via nettstedets eget søk) |
 | S&P Global PMI | Ugjennomsiktige GUID-URL-er uten offentlig oversiktsside, PDF-format, og direkte HTTP-henting ga 403 (bot-beskyttelse) |
 
 ## Sammendrag og kategorisering (Claude)
