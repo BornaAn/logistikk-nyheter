@@ -2,6 +2,7 @@ import { Suspense, type ReactNode } from "react";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { ArticleCard, type ArticleCardData } from "@/components/ArticleCard";
+import { CollapsibleFilters } from "@/components/CollapsibleFilters";
 import { FilterBar } from "@/components/FilterBar";
 import { HomeLink } from "@/components/HomeLink";
 import { Logo } from "@/components/Logo";
@@ -165,9 +166,11 @@ export default async function Home({ searchParams }: PageProps) {
             </div>
           </div>
 
-          <Suspense fallback={null}>
-            <FilterBar sources={activeSources.map((s) => s.name)} />
-          </Suspense>
+          <CollapsibleFilters>
+            <Suspense fallback={null}>
+              <FilterBar sources={activeSources.map((s) => s.name)} />
+            </Suspense>
+          </CollapsibleFilters>
         </div>
       </header>
 
