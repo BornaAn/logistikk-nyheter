@@ -220,12 +220,11 @@ export default async function Home({ searchParams }: PageProps) {
             <div className="rounded-lg border border-card-border bg-card card-shadow p-4">
               <SidebarHeading>Om dekningen</SidebarHeading>
               <p className="text-sm leading-relaxed text-foreground/80">
-                Laget av Borna. Samler saker fra {norwegianSources.length} norske og{" "}
-                {internationalSources.length} internasjonale kilder — ulike redaksjoner,
-                ulikt ståsted — pluss {activeScrapedSources.length} markedsindekser
-                (Drewry, Xeneta, ISM) hentet direkte fra kildenes egne sider siden de
-                ikke har RSS. Alt oppsummeres nøytralt uten å publisere rå tekst fra
-                kildene.
+                Laget av Borna Anvari. Samler saker fra {norwegianSources.length} norske
+                og {internationalSources.length} internasjonale kilder, ulike
+                redaksjoner og ståsted, pluss {activeScrapedSources.length}{" "}
+                markedsindekser hentet direkte fra kildenes egne sider. Alt
+                oppsummeres nøytralt uten å publisere rå tekst fra kildene.
               </p>
             </div>
 
