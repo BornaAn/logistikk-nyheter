@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import { CATEGORY_LABELS, CATEGORY_STYLES } from "@/lib/categories";
+import { findConcept } from "@/lib/concepts";
 import { excerpt, formatRelativeTime, readingTime } from "@/lib/format";
 import type { Category } from "@prisma/client";
 
@@ -15,6 +16,28 @@ export interface ArticleCardData {
   aiSummary: string;
   category: Category | null;
   accessLevel: "full" | "limited";
+  concepts: { slug: string; whyRelevant: string }[];
+}
+
+function ConceptBadges({ concepts }: { concepts: ArticleCardData["concepts"] }) {
+  if (concepts.length === 0) return null;
+  return (
+    <div className="flex flex-wrap gap-1.5 mt-3">
+      {concepts.map((c) => {
+        const concept = findConcept(c.slug);
+        if (!concept) return null;
+        return (
+          <span
+            key={c.slug}
+            title={`${concept.definition}\n\nI denne saken: ${c.whyRelevant}`}
+            className="inline-flex items-center rounded-full border border-accent/30 bg-accent/5 px-2 py-0.5 text-[0.7rem] font-medium text-accent cursor-help"
+          >
+            {concept.name}
+          </span>
+        );
+      })}
+    </div>
+  );
 }
 
 function ChevronIcon({ expanded }: { expanded: boolean }) {
@@ -113,6 +136,8 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
                 {article.aiSummary.slice(teaserBase.length).trimStart()}
               </p>
 
+              <ConceptBadges concepts={article.concepts} />
+
               <div className="mt-3.5 pt-3 border-t border-card-border">
                 <a
                   href={article.articleUrl}
@@ -134,6 +159,7 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
 
       {isShort && (
         <div className="px-4 sm:px-5 pb-4 sm:pb-5 -mt-1">
+          <ConceptBadges concepts={article.concepts} />
           <div className="pt-3 border-t border-card-border">
             <a
               href={article.articleUrl}

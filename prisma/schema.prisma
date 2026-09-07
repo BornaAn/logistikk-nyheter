@@ -56,10 +56,29 @@ model Article {
 
   createdAt DateTime @updatedAt
 
+  concepts ArticleConcept[]
+
   @@index([publishedAt])
   @@index([category])
   @@index([sourceName])
   @@index([summaryStatus])
+}
+
+// Links an article to 0-3 entries from the curated glossary in
+// src/lib/concepts.ts. conceptSlug references that code-based list (same
+// pattern as Article.sourceName referencing sources.ts) rather than a
+// separate Concept table, since the definitions are curated, not
+// user-editable.
+model ArticleConcept {
+  id          String @id @default(cuid())
+  articleId   String
+  conceptSlug String
+  whyRelevant String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, conceptSlug])
+  @@index([conceptSlug])
 }
 
 model FetchLog {

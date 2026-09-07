@@ -1,5 +1,6 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Category } from "@prisma/client";
+import { concepts } from "./concepts";
 
 const MODEL = "claude-sonnet-5";
 
@@ -10,6 +11,11 @@ const CATEGORIES: Category[] = [
   "norge",
   "globalt_geopolitikk",
 ];
+
+const CONCEPT_SLUGS = concepts.map((c) => c.slug);
+const CONCEPT_GLOSSARY_TEXT = concepts
+  .map((c) => `- ${c.slug}: ${c.name} — ${c.definition}`)
+  .join("\n");
 
 const SYSTEM_PROMPT = `Du oppsummerer en nyhetsartikkel om logistikk/frakt/handel for en norsk logistikk-nyhetsside.
 
@@ -25,7 +31,8 @@ Reglene er strenge:
 - Ikke inkluder egen mening eller "AI-kommentarer" — bare oppsummer sakens innhold.
 - Avslutt IKKE med en oppfordring om å lese hele artikkelen — det håndterer nettsiden selv.
 - Du kan bruke ett enkeltstående sitat under ca. 15 ord hvis det er avgjørende for meningen, men ikke mer.
-- Returner alltid en kategori fra den gitte listen, selv om du må velge den som passer best.`;
+- Returner alltid en kategori fra den gitte listen, selv om du må velge den som passer best.
+- Du får også en liste med fagbegreper fra et universitetskompendium (data science i supply chain management). Hvis 1-3 av disse begrepene er GENUINT relevante for akkurat denne saken — altså at kildeteksten faktisk illustrerer eller berører det begrepet, ikke bare at det er logistikk-relatert i vid forstand — inkluder dem i "relatedConcepts", hver med én kort, konkret setning (basert kun på kildeteksten) om hvorfor begrepet er relevant for denne saken. Bruk ALDRI et begrep som ikke står i den gitte listen. Er ingen av begrepene genuint relevante, la "relatedConcepts" være en tom liste — ikke tving det inn.`;
 
 let client: Anthropic | null = null;
 
@@ -60,6 +67,9 @@ export interface SummarizeResult {
   /** False if the extracted text didn't actually match the title, or was
    * too thin/generic (e.g. a paywall wall) to summarize reliably. */
   sufficientContent: boolean;
+  /** 0-3 glossary concepts (src/lib/concepts.ts) Claude judged genuinely
+   * relevant to this article, each with a one-sentence grounded reason. */
+  relatedConcepts: { slug: string; whyRelevant: string }[];
 }
 
 const SUMMARY_TOOL: Anthropic.Tool = {
@@ -83,8 +93,30 @@ const SUMMARY_TOOL: Anthropic.Tool = {
         enum: CATEGORIES,
         description: "Den kategorien som passer artikkelen best.",
       },
+      relatedConcepts: {
+        type: "array",
+        maxItems: 3,
+        description:
+          "0-3 fagbegreper fra den gitte ordlisten som er genuint relevante for denne saken. Tom liste hvis ingen passer.",
+        items: {
+          type: "object",
+          properties: {
+            slug: {
+              type: "string",
+              enum: CONCEPT_SLUGS,
+              description: "Slug for begrepet, nøyaktig som oppgitt i ordlisten.",
+            },
+            whyRelevant: {
+              type: "string",
+              description:
+                "Én kort, konkret setning om hvorfor begrepet er relevant for AKKURAT denne saken, basert kun på kildeteksten.",
+            },
+          },
+          required: ["slug", "whyRelevant"],
+        },
+      },
     },
-    required: ["sufficientContent", "summary", "category"],
+    required: ["sufficientContent", "summary", "category", "relatedConcepts"],
   },
 };
 
@@ -103,6 +135,8 @@ export async function summarizeArticle(
       : []),
     `Uthentet artikkeltekst:`,
     input.extractedText.slice(0, 12000),
+    `\nOrdliste (fagbegreper du kan velge relatedConcepts fra):`,
+    CONCEPT_GLOSSARY_TEXT,
   ].join("\n");
 
   const response = await anthropic.messages.create({
@@ -126,6 +160,7 @@ export async function summarizeArticle(
     summary?: unknown;
     category?: unknown;
     sufficientContent?: unknown;
+    relatedConcepts?: unknown;
   };
   const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
   const category = CATEGORIES.includes(parsed.category as Category)
@@ -137,5 +172,23 @@ export async function summarizeArticle(
     throw new Error("Claude returnerte et tomt sammendrag");
   }
 
-  return { summary, category, sufficientContent };
+  // Defensive filter, not just trust: drop anything that isn't a real slug
+  // from our glossary (a hallucinated or malformed entry) rather than
+  // letting a bad foreign-key value reach the database.
+  const relatedConcepts = Array.isArray(parsed.relatedConcepts)
+    ? parsed.relatedConcepts
+        .filter(
+          (c): c is { slug: string; whyRelevant: string } =>
+            typeof c === "object" &&
+            c !== null &&
+            typeof (c as { slug?: unknown }).slug === "string" &&
+            CONCEPT_SLUGS.includes((c as { slug: string }).slug) &&
+            typeof (c as { whyRelevant?: unknown }).whyRelevant === "string" &&
+            (c as { whyRelevant: string }).whyRelevant.trim().length > 0,
+        )
+        .slice(0, 3)
+        .map((c) => ({ slug: c.slug, whyRelevant: c.whyRelevant.trim() }))
+    : [];
+
+  return { summary, category, sufficientContent, relatedConcepts };
 }

@@ -96,6 +96,7 @@ export default async function Home({ searchParams }: PageProps) {
       where,
       orderBy: { publishedAt: "desc" },
       take: limit,
+      include: { concepts: { select: { conceptSlug: true, whyRelevant: true } } },
     }),
     prisma.article.count({ where }),
     prisma.article.count({ where: { aiSummary: { not: null } } }),
@@ -137,6 +138,7 @@ export default async function Home({ searchParams }: PageProps) {
     aiSummary: a.aiSummary ?? "",
     category: a.category,
     accessLevel: a.accessLevel,
+    concepts: a.concepts.map((c) => ({ slug: c.conceptSlug, whyRelevant: c.whyRelevant })),
   }));
 
   const hasMore = total > cards.length;

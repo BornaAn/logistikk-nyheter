@@ -282,6 +282,17 @@ async function runSummaryQueue(): Promise<{
           summaryError: null,
         },
       });
+
+      if (result.relatedConcepts.length > 0) {
+        await prisma.articleConcept.createMany({
+          data: result.relatedConcepts.map((c) => ({
+            articleId: article.id,
+            conceptSlug: c.slug,
+            whyRelevant: c.whyRelevant,
+          })),
+        });
+      }
+
       ok++;
     } catch (err) {
       failed++;

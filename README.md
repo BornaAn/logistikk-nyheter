@@ -317,10 +317,29 @@ egne ord, konkrete fakta, og en kategori fra listen: `shipping`, `trucking`,
 `lager_forsyningskjede`, `norge`, `globalt_geopolitikk`. Svaret hentes ut
 strukturert via tool-calling, ikke ved å parse fritekst.
 
-Kostnadskontroll: maks 60 sammendrag per cron-kjøring, og artikler eldre enn
-7 dager blir aldri sendt til sammendrag (bare lagret rått med
-`summaryStatus: "pending"` for alltid — de vises ikke i UI siden UI kun
-viser artikler med et ferdig sammendrag).
+Kostnadskontroll: maks 12 sammendrag per cron-kjøring (kjøres til gjengjeld
+hvert 20. minutt via GitHub Actions, se deploy-seksjonen), og artikler eldre
+enn 7 dager blir aldri sendt til sammendrag — `runIngest()` markerer dem
+`failed` med en forklarende feilmelding i stedet for å la dem stå som
+`pending` for alltid.
+
+### Fagbegreper koblet til artikler
+
+[`src/lib/concepts.ts`](src/lib/concepts.ts) inneholder en kuratert ordliste
+med fagbegreper fra ØAL121-kompendiet (data science i supply chain
+management, HVL) — hentet direkte fra kompendiets egne
+kapittel-infografikker, ikke gjettet. Samme Claude-kall som lager
+sammendraget får ordlisten i prompten og velger 0-3 begreper som er
+*genuint* relevante for akkurat den saken (ikke bare vagt logistikk-
+relatert), hver med én kort, kildebasert forklaring på hvorfor. Begrepene
+vises som klikkbare/hover-bare merkelapper under artikkelen i UI-en.
+
+Bevisst kodebasert (som `sources.ts`/`scrapers.ts`) i stedet for en egen
+databasetabell for selve begrepene — kun koblingen artikkel↔begrep
+(`ArticleConcept`, med `conceptSlug` som viser til listen i koden) lagres i
+databasen. Claudes valg valideres mot den faktiske slug-listen i
+[`src/lib/summarize.ts`](src/lib/summarize.ts) før lagring — en hallusinert
+eller feilstavet slug blir aldri skrevet til databasen.
 
 ### Kjent svakhet: sammendrag kan i sjeldne tilfeller beskrive feil sak
 
