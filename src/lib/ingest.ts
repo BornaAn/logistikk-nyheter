@@ -283,14 +283,24 @@ async function runSummaryQueue(): Promise<{
         },
       });
 
+      // Isolated from the try/catch below on purpose: a concept-tagging
+      // failure is cosmetic (missing badges) and must never undo a summary
+      // that already wrote successfully by falling into the catch and
+      // getting marked "failed".
       if (result.relatedConcepts.length > 0) {
-        await prisma.articleConcept.createMany({
-          data: result.relatedConcepts.map((c) => ({
-            articleId: article.id,
-            conceptSlug: c.slug,
-            whyRelevant: c.whyRelevant,
-          })),
-        });
+        try {
+          await prisma.articleConcept.createMany({
+            data: result.relatedConcepts.map((c) => ({
+              articleId: article.id,
+              conceptSlug: c.slug,
+              whyRelevant: c.whyRelevant,
+            })),
+          });
+        } catch (err) {
+          errors.push(
+            `[${article.sourceName}] "${article.title}": kunne ikke lagre fagbegreper: ${(err as Error).message}`,
+          );
+        }
       }
 
       ok++;

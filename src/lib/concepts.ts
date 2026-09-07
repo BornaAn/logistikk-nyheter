@@ -52,6 +52,13 @@ export const concepts: Concept[] = [
       "En modell som bruker historiske data til å forutsi fremtidige verdier — f.eks. forventet etterspørsel, fraktrater eller kapasitetsbehov. Kjernen i datadrevet planlegging i forsyningskjeder.",
   },
   {
+    slug: "bullwhip-effekten",
+    name: "Bullwhip-effekten",
+    category: "prognoser_simulering",
+    definition:
+      "At små svingninger i faktisk etterspørsel forsterkes til stadig større svingninger jo lenger oppover i forsyningskjeden man kommer (fra forhandler til grossist til produsent) — et velkjent fenomen som gir unødvendig overlager eller mangel langt fra der etterspørselen egentlig endret seg.",
+  },
+  {
     slug: "monte-carlo-simulering",
     name: "Monte Carlo-simulering",
     category: "prognoser_simulering",
@@ -94,6 +101,27 @@ export const concepts: Concept[] = [
     category: "kpi_styring",
     definition:
       "Et system som samler data, analyse og visualisering for å hjelpe mennesker ta bedre og raskere beslutninger — broen mellom rå analyse og faktisk handling i en organisasjon.",
+  },
+  {
+    slug: "balanced-scorecard",
+    name: "Balanced Scorecard",
+    category: "kpi_styring",
+    definition:
+      "Et rammeverk som bryter ned en virksomhets strategiske mål til konkrete indikatorer på tvers av flere perspektiver (f.eks. økonomi, kunder, interne prosesser, læring/utvikling) — ikke bare økonomiske tall — slik at man følger opp det som faktisk driver strategien, ikke bare bunnlinjen.",
+  },
+  {
+    slug: "ledende-og-etterslepende-indikatorer",
+    name: "Ledende og etterslepende indikatorer",
+    category: "kpi_styring",
+    definition:
+      "Ledende indikatorer varsler om en fremtidig utvikling før den skjer (f.eks. ordreinngang), mens etterslepende indikatorer viser resultater som allerede har inntruffet (f.eks. omsetning). Gode styringssystemer bruker begge — det ene for å handle i tide, det andre for å bekrefte om tiltakene faktisk virket.",
+  },
+  {
+    slug: "ledetid-og-syklustid",
+    name: "Ledetid og syklustid",
+    category: "kpi_styring",
+    definition:
+      "Ledetid er total tid fra en bestilling eller et behov oppstår til det er levert/løst; syklustid er tiden ett enkelt steg i prosessen tar. Sentrale mål på hvor raskt og forutsigbart en operasjon eller forsyningskjede faktisk leverer.",
   },
 
   // --- Maskinlæring og AI -----------------------------------------------
@@ -285,8 +313,29 @@ export const concepts: Concept[] = [
     definition:
       "De dimensjonene (pris/kostnad, kvalitet, leveringshastighet, pålitelighet, fleksibilitet) en virksomhet bevisst velger å prioritere og konkurrere på gjennom hvordan den faktisk drives — ikke alt kan være førsteprioritet samtidig.",
   },
+  {
+    slug: "lokal-optimalisering",
+    name: "Lokal vs. systemisk optimalisering",
+    category: "strategi_organisasjon",
+    definition:
+      "Når en avdeling eller funksjon forbedrer sine egne mål eller ressursbruk isolert, uten å se at det svekker helheten — f.eks. et lager som kutter kostnader ved å redusere buffer, men som dermed gjør hele forsyningskjeden mer sårbar for forstyrrelser.",
+  },
+  {
+    slug: "silotenkning",
+    name: "Silotenkning",
+    category: "strategi_organisasjon",
+    definition:
+      "Når avdelinger eller funksjoner holder på egen informasjon og optimerer egne mål uten å se den helhetlige sammenhengen — en vanlig kilde til dårlig koordinering, motstridende prioriteringer og tapt verdi på tvers av en organisasjon eller forsyningskjede.",
+  },
 
   // --- Lean og kontinuerlig forbedring --------------------------------------
+  {
+    slug: "pdca",
+    name: "PDCA (Plan-Do-Check-Act)",
+    category: "lean_og_forbedring",
+    definition:
+      "Den klassiske forbedringssyklusen fra Lean: planlegg et tiltak, gjennomfør det, evaluer om det faktisk virket, og juster/standardiser deretter — en gjentakende læringssløyfe fremfor en engangs-innsats, slik at forbedringer bygger videre på hverandre over tid.",
+  },
   {
     slug: "obeya",
     name: "Obeya",

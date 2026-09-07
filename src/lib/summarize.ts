@@ -174,7 +174,11 @@ export async function summarizeArticle(
 
   // Defensive filter, not just trust: drop anything that isn't a real slug
   // from our glossary (a hallucinated or malformed entry) rather than
-  // letting a bad foreign-key value reach the database.
+  // letting a bad foreign-key value reach the database. Also dedupe by
+  // slug — Claude occasionally lists the same concept twice in one
+  // response, which would otherwise violate the (articleId, conceptSlug)
+  // unique constraint when writing ArticleConcept rows.
+  const seenSlugs = new Set<string>();
   const relatedConcepts = Array.isArray(parsed.relatedConcepts)
     ? parsed.relatedConcepts
         .filter(
@@ -186,6 +190,7 @@ export async function summarizeArticle(
             typeof (c as { whyRelevant?: unknown }).whyRelevant === "string" &&
             (c as { whyRelevant: string }).whyRelevant.trim().length > 0,
         )
+        .filter((c) => (seenSlugs.has(c.slug) ? false : (seenSlugs.add(c.slug), true)))
         .slice(0, 3)
         .map((c) => ({ slug: c.slug, whyRelevant: c.whyRelevant.trim() }))
     : [];
