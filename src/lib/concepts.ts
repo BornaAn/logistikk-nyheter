@@ -15,7 +15,8 @@ export type ConceptCategory =
   | "maskinlaering_ai"
   | "data_infrastruktur"
   | "risiko_kvalitet"
-  | "strategi_organisasjon";
+  | "strategi_organisasjon"
+  | "lean_og_forbedring";
 
 export interface Concept {
   slug: string;
@@ -31,6 +32,7 @@ export const CONCEPT_CATEGORY_LABELS: Record<ConceptCategory, string> = {
   data_infrastruktur: "Data og infrastruktur",
   risiko_kvalitet: "Risiko og kvalitet",
   strategi_organisasjon: "Strategi og organisasjon",
+  lean_og_forbedring: "Lean og kontinuerlig forbedring",
 };
 
 export const concepts: Concept[] = [
@@ -191,6 +193,13 @@ export const concepts: Concept[] = [
       "En sjelden, ekstrem og vanskelig-å-forutse hendelse med stor konsekvens (f.eks. en pandemi eller en blokkert kanal) som tradisjonelle risikomodeller typisk ikke fanger opp på forhånd.",
   },
   {
+    slug: "dmaic",
+    name: "DMAIC (Define, Measure, Analyze, Improve, Control)",
+    category: "risiko_kvalitet",
+    definition:
+      "Six Sigmas strukturerte femstegs forbedringsprosess: definer problemet og målet, mål dagens tilstand med data, analyser årsakene, forbedre gjennom konkrete tiltak, og kontroller/stabiliser den nye tilstanden over tid slik at forbedringen faktisk varer.",
+  },
+  {
     slug: "risikomatrise",
     name: "Risikomatrise",
     category: "risiko_kvalitet",
@@ -275,6 +284,43 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "De dimensjonene (pris/kostnad, kvalitet, leveringshastighet, pålitelighet, fleksibilitet) en virksomhet bevisst velger å prioritere og konkurrere på gjennom hvordan den faktisk drives — ikke alt kan være førsteprioritet samtidig.",
+  },
+
+  // --- Lean og kontinuerlig forbedring --------------------------------------
+  {
+    slug: "obeya",
+    name: "Obeya",
+    category: "lean_og_forbedring",
+    definition:
+      "Japansk for \"stort rom\" — et fysisk eller digitalt visualiseringsrom (tavler, KPI-er, prosesskart, risiko og tiltak) der tverrfaglige team samles for felles situasjonsforståelse, rask problemløsning og koordinerte beslutninger. Opprinnelig fra Toyota Production System, brukt til å skape felles forståelse på tvers av en organisasjon i stedet for isolert rapportering.",
+  },
+  {
+    slug: "visuell-styring",
+    name: "Visuell styring",
+    category: "lean_og_forbedring",
+    definition:
+      "Å gjøre status, mål og avvik synlige for alle involverte gjennom tavler/skjermer i stedet for å gjemme dem i rapporter — reduserer informasjonsasymmetri og gjør det lettere å oppdage og handle på problemer raskt, et kjerneprinsipp i Lean.",
+  },
+  {
+    slug: "dsrp",
+    name: "DSRP (systemtenkning)",
+    category: "lean_og_forbedring",
+    definition:
+      "Et rammeverk for systemtenkning bestående av fire elementer: Distinctions (avgrense hva problemet faktisk er), Systems (forstå helhet og deler), Relationships (identifisere årsakssammenhenger) og Perspectives (inkludere flere synsvinkler) — brukes til å analysere komplekse operasjonelle problemer grundigere enn en overfladisk beskrivelse.",
+  },
+  {
+    slug: "a3-metodikk",
+    name: "A3-metodikk",
+    category: "lean_og_forbedring",
+    definition:
+      "En strukturert Lean-tilnærming til problemløsning der hele resonnementet — problem, nåsituasjon, årsaksanalyse, mottiltak og oppfølging — samles på én side (opprinnelig et A3-ark), for å tvinge frem klarhet og felles forståelse fremfor spredt og uklar dokumentasjon.",
+  },
+  {
+    slug: "verdistromsanalyse",
+    name: "Verdistrømsanalyse (Value Stream Mapping)",
+    category: "lean_og_forbedring",
+    definition:
+      "Kartlegging av alle steg — informasjonsflyt og materialflyt — en vare eller tjeneste går gjennom, for å synliggjøre hvor det faktisk skapes verdi og hvor det er sløsing (venting, overproduksjon, unødvendig transport, overprosessering m.m.), som grunnlag for å designe en bedre fremtidig arbeidsflyt.",
   },
 ];
 
