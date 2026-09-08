@@ -2,6 +2,7 @@ import * as cheerio from "cheerio";
 import type { Category } from "@prisma/client";
 import type { SourceCountry } from "./sources";
 import type { FeedItem } from "./rss";
+import { fetchWithTimeout } from "./fetchTimeout";
 
 /**
  * A source that isn't RSS at all — market indices and similar sites that
@@ -25,7 +26,7 @@ export interface ScrapedSource {
 const UA = "Mozilla/5.0 (compatible; LogistikkNyhetsbot/1.0; +https://example.com/bot)";
 
 async function fetchHtml(url: string): Promise<string> {
-  const res = await fetch(url, { headers: { "User-Agent": UA } });
+  const res = await fetchWithTimeout(url, { headers: { "User-Agent": UA } });
   if (!res.ok) throw new Error(`HTTP ${res.status} fra ${url}`);
   return res.text();
 }
@@ -155,7 +156,7 @@ async function fetchGscpi(): Promise<FeedItem[]> {
   const dataUrl =
     "https://www.newyorkfed.org/medialibrary/research/interactives/data/gscpi/gscpi.json";
 
-  const res = await fetch(dataUrl, { headers: { "User-Agent": UA } });
+  const res = await fetchWithTimeout(dataUrl, { headers: { "User-Agent": UA } });
   if (!res.ok) throw new Error(`HTTP ${res.status} fra ${dataUrl}`);
   const data = (await res.json()) as {
     interactive?: { summaryTitle?: string; summaryList?: string[] };

@@ -1,5 +1,6 @@
 import { extract } from "@extractus/article-extractor";
 import * as cheerio from "cheerio";
+import { fetchWithTimeout } from "./fetchTimeout";
 
 export interface ExtractedArticle {
   text: string;
@@ -16,7 +17,7 @@ const USER_AGENT =
   "Mozilla/5.0 (compatible; LogistikkNyhetsbot/1.0; +https://example.com/bot)";
 
 function fetchWithUserAgent(url: string): Promise<Response> {
-  return fetch(url, { headers: { "User-Agent": USER_AGENT } });
+  return fetchWithTimeout(url, { headers: { "User-Agent": USER_AGENT } });
 }
 
 function htmlToText(html: string): string {

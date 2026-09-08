@@ -7,6 +7,10 @@ type CustomItem = {
 };
 
 const parser = new Parser<Record<string, unknown>, CustomItem>({
+  // Without this, a single hanging feed can stall the whole concurrent
+  // fetch phase well past Vercel's real 60s function limit — see
+  // fetchTimeout.ts for the same reasoning applied to plain fetch() calls.
+  timeout: 10000,
   customFields: {
     item: [["content:encoded", "contentEncoded"]],
   },
