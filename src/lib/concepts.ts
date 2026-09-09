@@ -1,9 +1,10 @@
 /**
- * Curated glossary of data-science-in-SCM concepts, sourced from the
- * course compendium (ØAL121, HVL). Claude picks 0-3 of these per article
- * during summarization and explains why each one is relevant to that
- * specific story — grounded to this fixed list so it never invents terms
- * or drifts from what the course actually teaches.
+ * Curated glossary of data-science-in-SCM concepts, sourced from three
+ * course compendiums (ØAL121 and ØAL118, HVL, all by Elisa Haagensen
+ * Karlsen). Claude picks 0-3 of these per article during summarization and
+ * explains why each one is relevant to that specific story — grounded to
+ * this fixed list so it never invents terms or drifts from what the
+ * course actually teaches.
  *
  * Kept in code (like sources.ts/scrapers.ts) rather than the database:
  * these are curated/reviewed definitions, not something readers edit.
@@ -23,6 +24,9 @@ export interface Concept {
   name: string;
   category: ConceptCategory;
   definition: string;
+  /** Which compendium/chapter this was sourced from, for readers who want
+   * to go read the original material. Shown alongside the definition. */
+  kilde: string;
 }
 
 export const CONCEPT_CATEGORY_LABELS: Record<ConceptCategory, string> = {
@@ -43,6 +47,7 @@ export const concepts: Concept[] = [
     category: "prognoser_simulering",
     definition:
       "Analyse av data samlet inn over tid (f.eks. ukentlige fraktrater eller månedlig etterspørsel) for å identifisere trender, sesongmønstre og avvik. Grunnlaget for å forstå hvordan noe har utviklet seg før man prøver å forutsi hvor det er på vei.",
+    kilde: "ØAL121, kapittel 6 og 10",
   },
   {
     slug: "prognosemodell",
@@ -50,6 +55,7 @@ export const concepts: Concept[] = [
     category: "prognoser_simulering",
     definition:
       "En modell som bruker historiske data til å forutsi fremtidige verdier — f.eks. forventet etterspørsel, fraktrater eller kapasitetsbehov. Kjernen i datadrevet planlegging i forsyningskjeder.",
+    kilde: "ØAL121, kapittel 10",
   },
   {
     slug: "bullwhip-effekten",
@@ -57,6 +63,7 @@ export const concepts: Concept[] = [
     category: "prognoser_simulering",
     definition:
       "At små svingninger i faktisk etterspørsel forsterkes til stadig større svingninger jo lenger oppover i forsyningskjeden man kommer (fra forhandler til grossist til produsent) — et velkjent fenomen som gir unødvendig overlager eller mangel langt fra der etterspørselen egentlig endret seg.",
+    kilde: "ØAL118, Begreper og pensum uke 38 (systemtenkning og DSRP)",
   },
   {
     slug: "monte-carlo-simulering",
@@ -64,6 +71,7 @@ export const concepts: Concept[] = [
     category: "prognoser_simulering",
     definition:
       "En metode som simulerer tusenvis av tilfeldige utfall (basert på sannsynlighetsfordelinger) for å forstå spennet av mulige resultater under usikkerhet — brukes f.eks. til å anslå risikoen for forsinkelser eller kostnadsoverskridelser i en forsyningskjede.",
+    kilde: "ØAL121, kapittel 5",
   },
   {
     slug: "digital-tvilling",
@@ -71,6 +79,7 @@ export const concepts: Concept[] = [
     category: "prognoser_simulering",
     definition:
       "En virtuell, sanntidsoppdatert modell av et fysisk system (f.eks. et lager, en havn eller en hel forsyningskjede) som kan brukes til å teste scenarioer og endringer uten å røre den ekte driften.",
+    kilde: "ØAL121, kapittel 16",
   },
   {
     slug: "kapasitetsanalyse",
@@ -78,6 +87,7 @@ export const concepts: Concept[] = [
     category: "prognoser_simulering",
     definition:
       "Å analysere og planlegge hvor mye en ressurs (skip, lager, transportnettverk) faktisk kan håndtere, og identifisere flaskehalser som begrenser gjennomstrømningen.",
+    kilde: "ØAL121, kapittel 6",
   },
 
   // --- KPI og styring ---------------------------------------------------
@@ -87,6 +97,7 @@ export const concepts: Concept[] = [
     category: "kpi_styring",
     definition:
       "Et konkret, målbart nøkkeltall brukt til å følge hvor godt en operasjon presterer mot et mål — f.eks. leveringspresisjon, lageromløpshastighet eller kapasitetsutnyttelse.",
+    kilde: "ØAL121, kapittel 8",
   },
   {
     slug: "dashboard",
@@ -94,6 +105,7 @@ export const concepts: Concept[] = [
     category: "kpi_styring",
     definition:
       "Et visuelt grensesnitt som samler flere KPI-er og datakilder på ett sted i sanntid, slik at beslutningstakere kan se status og avvik uten å grave i rådata selv.",
+    kilde: "ØAL121, kapittel 8–9",
   },
   {
     slug: "beslutningsstottesystem",
@@ -101,6 +113,7 @@ export const concepts: Concept[] = [
     category: "kpi_styring",
     definition:
       "Et system som samler data, analyse og visualisering for å hjelpe mennesker ta bedre og raskere beslutninger — broen mellom rå analyse og faktisk handling i en organisasjon.",
+    kilde: "ØAL121, kapittel 9",
   },
   {
     slug: "balanced-scorecard",
@@ -108,6 +121,7 @@ export const concepts: Concept[] = [
     category: "kpi_styring",
     definition:
       "Et rammeverk som bryter ned en virksomhets strategiske mål til konkrete indikatorer på tvers av flere perspektiver (f.eks. økonomi, kunder, interne prosesser, læring/utvikling) — ikke bare økonomiske tall — slik at man følger opp det som faktisk driver strategien, ikke bare bunnlinjen.",
+    kilde: "ØAL118, Begreper og pensum uke 43 (strategisk Obeya og KPI-styring)",
   },
   {
     slug: "ledende-og-etterslepende-indikatorer",
@@ -115,6 +129,7 @@ export const concepts: Concept[] = [
     category: "kpi_styring",
     definition:
       "Ledende indikatorer varsler om en fremtidig utvikling før den skjer (f.eks. ordreinngang), mens etterslepende indikatorer viser resultater som allerede har inntruffet (f.eks. omsetning). Gode styringssystemer bruker begge — det ene for å handle i tide, det andre for å bekrefte om tiltakene faktisk virket.",
+    kilde: "ØAL118, Begreper og pensum uke 43",
   },
   {
     slug: "ledetid-og-syklustid",
@@ -122,6 +137,7 @@ export const concepts: Concept[] = [
     category: "kpi_styring",
     definition:
       "Ledetid er total tid fra en bestilling eller et behov oppstår til det er levert/løst; syklustid er tiden ett enkelt steg i prosessen tar. Sentrale mål på hvor raskt og forutsigbart en operasjon eller forsyningskjede faktisk leverer.",
+    kilde: "ØAL118, Begreper og pensum uke 39 (verdistrømsanalyse og flyt)",
   },
 
   // --- Maskinlæring og AI -----------------------------------------------
@@ -131,6 +147,7 @@ export const concepts: Concept[] = [
     category: "maskinlaering_ai",
     definition:
       "Metoder der en modell lærer mønstre direkte fra data i stedet for å følge manuelt programmerte regler — brukes i forsyningskjeder til f.eks. etterspørselsprognoser, ruteoptimalisering og risikovurdering.",
+    kilde: "ØAL121, kapittel 23",
   },
   {
     slug: "regresjon-klassifikasjon",
@@ -138,6 +155,7 @@ export const concepts: Concept[] = [
     category: "maskinlaering_ai",
     definition:
       "To grunnleggende typer prediksjon i maskinlæring: regresjon forutsier et tall (f.eks. forventet fraktrate), klassifikasjon forutsier en kategori (f.eks. om en forsendelse blir forsinket eller ikke).",
+    kilde: "ØAL121, kapittel 25",
   },
   {
     slug: "nevrale-nettverk",
@@ -145,6 +163,7 @@ export const concepts: Concept[] = [
     category: "maskinlaering_ai",
     definition:
       "Modeller inspirert av hjernens struktur, bygget opp av lag som lærer stadig mer komplekse mønstre i data. Grunnlaget for det meste av moderne bildegjenkjenning, språkmodeller og avansert prognosearbeid.",
+    kilde: "ØAL121, kapittel 28",
   },
   {
     slug: "nlp",
@@ -152,6 +171,7 @@ export const concepts: Concept[] = [
     category: "maskinlaering_ai",
     definition:
       "Teknikker for at datamaskiner skal forstå og behandle menneskelig tekst — brukes f.eks. til å analysere kundeklager, tolke tolldokumenter automatisk eller hente innsikt fra ustrukturerte rapporter.",
+    kilde: "ØAL121, kapittel 31–32",
   },
   {
     slug: "anomali-deteksjon",
@@ -159,6 +179,7 @@ export const concepts: Concept[] = [
     category: "maskinlaering_ai",
     definition:
       "Statistiske eller maskinlæringsbaserte metoder for å automatisk oppdage uvanlige avvik i data — f.eks. en plutselig unormal forsinkelse, et prishopp eller mistenkelig aktivitet i en forsyningskjede — før det blir et stort problem.",
+    kilde: "ØAL121, kapittel 21",
   },
 
   // --- Data og infrastruktur ----------------------------------------------
@@ -168,6 +189,7 @@ export const concepts: Concept[] = [
     category: "data_infrastruktur",
     definition:
       "Et grensesnitt som lar ulike systemer utveksle data automatisk og i sanntid — f.eks. henter et sporingssystem posisjonsdata direkte fra et rederis API i stedet for manuell oppdatering.",
+    kilde: "ØAL121, kapittel 11",
   },
   {
     slug: "sanntidsdata",
@@ -175,6 +197,7 @@ export const concepts: Concept[] = [
     category: "data_infrastruktur",
     definition:
       "Data som oppdateres fortløpende (i motsetning til periodiske rapporter), og som gjør det mulig å reagere på hendelser i forsyningskjeden mens de skjer, ikke dagen etter.",
+    kilde: "ØAL121, kapittel 34",
   },
   {
     slug: "datakvalitet",
@@ -182,6 +205,7 @@ export const concepts: Concept[] = [
     category: "data_infrastruktur",
     definition:
       "Arbeidet med å sikre at data er korrekte, komplette og konsistente før de brukes i analyse — dårlig datakvalitet gir upålitelige modeller og beslutninger, uansett hvor avansert metoden er.",
+    kilde: "ØAL121, kapittel 15",
   },
   {
     slug: "sky-og-dataplattformer",
@@ -189,6 +213,7 @@ export const concepts: Concept[] = [
     category: "data_infrastruktur",
     definition:
       "Skybaserte systemer (f.eks. data warehouses som Snowflake) for å lagre og prosessere store datamengder fra flere kilder samlet, som infrastrukturgrunnlag for avansert analyse på tvers av en organisasjon.",
+    kilde: "ØAL121, kapittel 33",
   },
 
   // --- Risiko og kvalitet -------------------------------------------------
@@ -198,6 +223,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "Bruk av statistikk og kontrollkart til å overvåke en prosess over tid og oppdage når den beveger seg utenfor normal variasjon — et tidlig varselsystem for kvalitetsproblemer.",
+    kilde: "ØAL121, kapittel 13",
   },
   {
     slug: "six-sigma",
@@ -205,6 +231,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "Et metodisk rammeverk for kontinuerlig forbedring som bruker dataanalyse til å redusere variasjon og feil i en prosess eller forsyningskjede.",
+    kilde: "ØAL118, Obeya-kompendiet, kapittel 1",
   },
   {
     slug: "risiko-og-resiliens",
@@ -212,6 +239,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "Evnen til å identifisere, vurdere og håndtere usikkerhet i forsyningskjeden, og bygge robusthet slik at driften tåler og raskt kommer seg etter forstyrrelser.",
+    kilde: "ØAL121, kapittel 19",
   },
   {
     slug: "black-swan-hendelse",
@@ -219,6 +247,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "En sjelden, ekstrem og vanskelig-å-forutse hendelse med stor konsekvens (f.eks. en pandemi eller en blokkert kanal) som tradisjonelle risikomodeller typisk ikke fanger opp på forhånd.",
+    kilde: "ØAL121, kapittel 19",
   },
   {
     slug: "dmaic",
@@ -226,6 +255,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "Six Sigmas strukturerte femstegs forbedringsprosess: definer problemet og målet, mål dagens tilstand med data, analyser årsakene, forbedre gjennom konkrete tiltak, og kontroller/stabiliser den nye tilstanden over tid slik at forbedringen faktisk varer.",
+    kilde: "ØAL118, Obeya-kompendiet, kapittel 1 og 3",
   },
   {
     slug: "risikomatrise",
@@ -233,6 +263,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "Et visuelt verktøy (rutenett) som plotter risikoer etter sannsynlighet og konsekvens (risiko = sannsynlighet × konsekvens), slik at de mest kritiske risikoene — de i den røde sonen — lett kan skilles fra dem som kan vente.",
+    kilde: "ØAL118, hovedkompendiet, kapittel 23",
   },
   {
     slug: "fmea",
@@ -240,6 +271,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "En systematisk metode for å identifisere mulige feilmåter i en prosess eller et produkt, og deres konsekvenser, FØR de faktisk skjer — slik at man kan sette inn tiltak i forkant i stedet for å reagere etterpå.",
+    kilde: "ØAL118, hovedkompendiet, kapittel 23",
   },
   {
     slug: "bow-tie-analyse",
@@ -247,6 +279,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "Et risikoverktøy som visualiserer en uønsket hendelse i midten, med mulige årsaker på den ene siden og mulige konsekvenser på den andre — og hvilke barrierer/tiltak som finnes for å forhindre årsakene eller begrense konsekvensene.",
+    kilde: "ØAL118, hovedkompendiet, kapittel 23",
   },
   {
     slug: "rotarsaksanalyse",
@@ -254,6 +287,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "Å grave bak et synlig avvik eller problem for å finne den underliggende, egentlige årsaken — ikke bare symptomet — slik at forbedringstiltak treffer det som faktisk forårsaker problemet og hindrer at det gjentar seg.",
+    kilde: "ØAL121, kapittel 14 / ØAL118 Obeya-kompendiet, kapittel 13",
   },
   {
     slug: "beslutningstre-og-forventet-verdi",
@@ -261,6 +295,7 @@ export const concepts: Concept[] = [
     category: "risiko_kvalitet",
     definition:
       "En strukturert måte å analysere en beslutning under usikkerhet på: kartlegge alternativene, sannsynlighetene for ulike utfall og konsekvensene av hvert, for å komme frem til det valget som gir best forventet resultat over tid.",
+    kilde: "ØAL118, hovedkompendiet, kapittel 17",
   },
 
   // --- Strategi og organisasjon --------------------------------------------
@@ -270,6 +305,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Den strategiske og organisatoriske prosessen med å ta i bruk data og ny teknologi for å endre hvordan en virksomhet faktisk drives — mer enn bare å innføre nye verktøy, det krever endret arbeidsmåte og kultur.",
+    kilde: "ØAL121, kapittel 35",
   },
   {
     slug: "konkurransefortrinn-gjennom-data",
@@ -277,6 +313,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Tanken om at data og analysekapabilitet i seg selv kan være en strategisk ressurs som skiller en virksomhet fra konkurrentene — ikke bare et støtteverktøy, men en kilde til varig fortrinn.",
+    kilde: "ØAL121, kapittel 36",
   },
   {
     slug: "baerekraft-og-teknologi",
@@ -284,6 +321,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Bruk av data og analyse til å balansere økonomiske, miljømessige og sosiale hensyn i forsyningskjeden (Triple Bottom Line) — f.eks. for å redusere utslipp eller optimalisere ressursbruk.",
+    kilde: "ØAL121, kapittel 37",
   },
   {
     slug: "etikk-og-ai",
@@ -291,6 +329,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Vurderinger knyttet til ansvarlig bruk av data og kunstig intelligens — bl.a. skjevheter (bias) i data og modeller, åpenhet om hvordan beslutninger tas, og hvem som står ansvarlig når en AI-modell tar feil.",
+    kilde: "ØAL121, kapittel 22",
   },
   {
     slug: "autonome-forsyningskjeder",
@@ -298,6 +337,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Forsyningskjeder der AI-drevne systemer i økende grad kan overvåke, beslutte og handle selvstendig — f.eks. automatisk justere bestillinger eller ruter uten at et menneske griper inn i hvert steg.",
+    kilde: "ØAL121, kapittel 39",
   },
   {
     slug: "operasjonelle-trade-offs",
@@ -305,6 +345,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Den grunnleggende avveiningen i operasjonsstrategi mellom kostnad, kvalitet, fleksibilitet og hastighet — man kan sjelden vinne på alle fire samtidig, og det å bli bedre på én dimensjon krever ofte å gi noe på en annen. Gode prosessforbedringer (f.eks. Lean) kan flytte grensen for hva som er mulig, men fjerner ikke avveiningen helt.",
+    kilde: "ØAL118, hovedkompendiet, kapittel 24",
   },
   {
     slug: "operasjonelle-konkurranseprioriteringer",
@@ -312,6 +353,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "De dimensjonene (pris/kostnad, kvalitet, leveringshastighet, pålitelighet, fleksibilitet) en virksomhet bevisst velger å prioritere og konkurrere på gjennom hvordan den faktisk drives — ikke alt kan være førsteprioritet samtidig.",
+    kilde: "ØAL118, hovedkompendiet, kapittel 24",
   },
   {
     slug: "lokal-optimalisering",
@@ -319,6 +361,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Når en avdeling eller funksjon forbedrer sine egne mål eller ressursbruk isolert, uten å se at det svekker helheten — f.eks. et lager som kutter kostnader ved å redusere buffer, men som dermed gjør hele forsyningskjeden mer sårbar for forstyrrelser.",
+    kilde: "ØAL118, Begreper og pensum uke 38 / hovedkompendiet kapittel 4",
   },
   {
     slug: "silotenkning",
@@ -326,6 +369,7 @@ export const concepts: Concept[] = [
     category: "strategi_organisasjon",
     definition:
       "Når avdelinger eller funksjoner holder på egen informasjon og optimerer egne mål uten å se den helhetlige sammenhengen — en vanlig kilde til dårlig koordinering, motstridende prioriteringer og tapt verdi på tvers av en organisasjon eller forsyningskjede.",
+    kilde: "ØAL118, Begreper og pensum uke 42",
   },
 
   // --- Lean og kontinuerlig forbedring --------------------------------------
@@ -335,6 +379,7 @@ export const concepts: Concept[] = [
     category: "lean_og_forbedring",
     definition:
       "Den klassiske forbedringssyklusen fra Lean: planlegg et tiltak, gjennomfør det, evaluer om det faktisk virket, og juster/standardiser deretter — en gjentakende læringssløyfe fremfor en engangs-innsats, slik at forbedringer bygger videre på hverandre over tid.",
+    kilde: "ØAL118, Begreper og pensum uke 41",
   },
   {
     slug: "obeya",
@@ -342,6 +387,7 @@ export const concepts: Concept[] = [
     category: "lean_og_forbedring",
     definition:
       "Japansk for \"stort rom\" — et fysisk eller digitalt visualiseringsrom (tavler, KPI-er, prosesskart, risiko og tiltak) der tverrfaglige team samles for felles situasjonsforståelse, rask problemløsning og koordinerte beslutninger. Opprinnelig fra Toyota Production System, brukt til å skape felles forståelse på tvers av en organisasjon i stedet for isolert rapportering.",
+    kilde: "ØAL118, Obeya-kompendiet, kapittel 2",
   },
   {
     slug: "visuell-styring",
@@ -349,6 +395,7 @@ export const concepts: Concept[] = [
     category: "lean_og_forbedring",
     definition:
       "Å gjøre status, mål og avvik synlige for alle involverte gjennom tavler/skjermer i stedet for å gjemme dem i rapporter — reduserer informasjonsasymmetri og gjør det lettere å oppdage og handle på problemer raskt, et kjerneprinsipp i Lean.",
+    kilde: "ØAL118, Obeya-kompendiet, kapittel 2",
   },
   {
     slug: "dsrp",
@@ -356,6 +403,7 @@ export const concepts: Concept[] = [
     category: "lean_og_forbedring",
     definition:
       "Et rammeverk for systemtenkning bestående av fire elementer: Distinctions (avgrense hva problemet faktisk er), Systems (forstå helhet og deler), Relationships (identifisere årsakssammenhenger) og Perspectives (inkludere flere synsvinkler) — brukes til å analysere komplekse operasjonelle problemer grundigere enn en overfladisk beskrivelse.",
+    kilde: "ØAL118, Obeya-kompendiet, kapittel 4",
   },
   {
     slug: "a3-metodikk",
@@ -363,6 +411,7 @@ export const concepts: Concept[] = [
     category: "lean_og_forbedring",
     definition:
       "En strukturert Lean-tilnærming til problemløsning der hele resonnementet — problem, nåsituasjon, årsaksanalyse, mottiltak og oppfølging — samles på én side (opprinnelig et A3-ark), for å tvinge frem klarhet og felles forståelse fremfor spredt og uklar dokumentasjon.",
+    kilde: "ØAL118, Obeya-kompendiet, kapittel 13",
   },
   {
     slug: "verdistromsanalyse",
@@ -370,6 +419,7 @@ export const concepts: Concept[] = [
     category: "lean_og_forbedring",
     definition:
       "Kartlegging av alle steg — informasjonsflyt og materialflyt — en vare eller tjeneste går gjennom, for å synliggjøre hvor det faktisk skapes verdi og hvor det er sløsing (venting, overproduksjon, unødvendig transport, overprosessering m.m.), som grunnlag for å designe en bedre fremtidig arbeidsflyt.",
+    kilde: "ØAL118, Obeya-kompendiet, kapittel 12",
   },
 ];
 

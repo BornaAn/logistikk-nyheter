@@ -73,6 +73,7 @@ function ConceptBadges({ concepts }: { concepts: ArticleCardData["concepts"] }) 
         >
           <p className="text-xs font-bold text-foreground mb-1">{open.concept.name}</p>
           <p className="text-xs leading-relaxed text-foreground/80">{open.concept.definition}</p>
+          <p className="text-[0.7rem] text-muted mt-1.5 italic">Kilde: {open.concept.kilde}</p>
           <p className="text-xs leading-relaxed text-foreground/70 mt-2 pt-2 border-t border-card-border">
             <span className="font-semibold text-accent">I denne saken: </span>
             {open.whyRelevant}
