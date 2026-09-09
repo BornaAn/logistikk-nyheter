@@ -4,6 +4,8 @@ import { useState } from "react";
 import { CATEGORY_LABELS, CATEGORY_STYLES } from "@/lib/categories";
 import { findConcept } from "@/lib/concepts";
 import { excerpt, formatRelativeTime, readingTime } from "@/lib/format";
+import { PensumKoblingPanel } from "./PensumKoblingPanel";
+import type { PensumKobling } from "@/lib/pensumKoblinger";
 import type { Category } from "@prisma/client";
 
 export interface ArticleCardData {
@@ -17,6 +19,9 @@ export interface ArticleCardData {
   category: Category | null;
   accessLevel: "full" | "limited";
   concepts: { slug: string; whyRelevant: string }[];
+  /** From the teacher's separately-built pensum feed — absent whenever
+   * that feed isn't configured or has nothing for this article. */
+  pensumKobling?: PensumKobling;
 }
 
 // A native title="" tooltip is too small/unstyled to actually show a
@@ -185,6 +190,8 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
                 {article.aiSummary.slice(teaserBase.length).trimStart()}
               </p>
 
+              {article.pensumKobling && <PensumKoblingPanel kobling={article.pensumKobling} />}
+
               <div className="mt-3.5 pt-3 border-t border-card-border">
                 <a
                   href={article.articleUrl}
@@ -206,6 +213,7 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
 
       {isShort && (
         <div className="px-4 sm:px-5 pb-4 sm:pb-5 -mt-1">
+          {article.pensumKobling && <PensumKoblingPanel kobling={article.pensumKobling} />}
           <div className="pt-3 border-t border-card-border">
             <a
               href={article.articleUrl}

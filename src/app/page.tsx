@@ -9,6 +9,7 @@ import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { ALL_CATEGORIES } from "@/lib/categories";
 import { formatRelativeTime } from "@/lib/format";
+import { getPensumKoblinger } from "@/lib/pensumKoblinger";
 import { sources } from "@/lib/sources";
 import { scrapedSources } from "@/lib/scrapers";
 import type { Category } from "@prisma/client";
@@ -21,6 +22,10 @@ interface PageProps {
     source?: string;
     q?: string;
     limit?: string;
+    // For linking straight from Canvas to "the articles for this week" once
+    // the teacher's pensum feed has real data — see pensumKoblinger.ts.
+    emne?: string;
+    uke?: string;
   }>;
 }
 
@@ -45,6 +50,8 @@ export default async function Home({ searchParams }: PageProps) {
   const source = params.source || undefined;
   const q = params.q?.trim() || undefined;
   const limit = Math.max(PAGE_SIZE, parseInt(params.limit ?? "", 10) || PAGE_SIZE);
+  const emne = params.emne?.trim() || undefined;
+  const uke = params.uke ? parseInt(params.uke, 10) : undefined;
 
   const where = {
     aiSummary: { not: null },
@@ -60,35 +67,40 @@ export default async function Home({ searchParams }: PageProps) {
       : {}),
   };
 
-  const [articles, total, allTimeTotal, sourceCounts, lastRun] = await Promise.all([
-    prisma.article.findMany({
-      where,
-      orderBy: { publishedAt: "desc" },
-      take: limit,
-      include: { concepts: { select: { conceptSlug: true, whyRelevant: true } } },
-    }),
-    prisma.article.count({ where }),
-    prisma.article.count({ where: { aiSummary: { not: null } } }),
-    prisma.article.groupBy({
-      by: ["sourceName"],
-      where: { aiSummary: { not: null } },
-      _count: true,
-    }),
-    // Sourced from the most recent successful summarization, not fetchedAt:
-    // fetchedAt updates whenever the feed step runs even if every
-    // summarization call fails afterwards (e.g. the Anthropic account ran
-    // out of credits) — that would make this claim the site is fresh on a
-    // day where zero new stories actually became visible. summarizedAt only
-    // advances when a real, published summary is written, which is what a
-    // reader actually cares about. Each article write commits individually
-    // during the run (not the fragile once-at-the-end FetchLog row), so this
-    // is just as reliable as fetchedAt was.
-    prisma.article.findFirst({
-      where: { aiSummary: { not: null } },
-      orderBy: { summarizedAt: "desc" },
-      select: { summarizedAt: true },
-    }),
-  ]);
+  const [articles, total, allTimeTotal, sourceCounts, lastRun, pensumKoblinger] =
+    await Promise.all([
+      prisma.article.findMany({
+        where,
+        orderBy: { publishedAt: "desc" },
+        take: limit,
+        include: { concepts: { select: { conceptSlug: true, whyRelevant: true } } },
+      }),
+      prisma.article.count({ where }),
+      prisma.article.count({ where: { aiSummary: { not: null } } }),
+      prisma.article.groupBy({
+        by: ["sourceName"],
+        where: { aiSummary: { not: null } },
+        _count: true,
+      }),
+      // Sourced from the most recent successful summarization, not fetchedAt:
+      // fetchedAt updates whenever the feed step runs even if every
+      // summarization call fails afterwards (e.g. the Anthropic account ran
+      // out of credits) — that would make this claim the site is fresh on a
+      // day where zero new stories actually became visible. summarizedAt only
+      // advances when a real, published summary is written, which is what a
+      // reader actually cares about. Each article write commits individually
+      // during the run (not the fragile once-at-the-end FetchLog row), so this
+      // is just as reliable as fetchedAt was.
+      prisma.article.findFirst({
+        where: { aiSummary: { not: null } },
+        orderBy: { summarizedAt: "desc" },
+        select: { summarizedAt: true },
+      }),
+      // The teacher's own tool, her own curriculum data — null whenever her
+      // feed isn't configured yet or is unreachable, in which case none of
+      // this renders. See pensumKoblinger.ts.
+      getPensumKoblinger(),
+    ]);
 
   const countBySource = new Map(sourceCounts.map((s) => [s.sourceName, s._count]));
   const rssSources = sources.filter((s) => s.enabled && s.feedUrl);
@@ -97,7 +109,7 @@ export default async function Home({ searchParams }: PageProps) {
   const norwegianSources = rssSources.filter((s) => s.country === "NO");
   const internationalSources = rssSources.filter((s) => s.country === "INT");
 
-  const cards: ArticleCardData[] = articles.map((a) => ({
+  let cards: ArticleCardData[] = articles.map((a) => ({
     id: a.id,
     title: a.title,
     sourceName: a.sourceName,
@@ -108,7 +120,21 @@ export default async function Home({ searchParams }: PageProps) {
     category: a.category,
     accessLevel: a.accessLevel,
     concepts: a.concepts.map((c) => ({ slug: c.conceptSlug, whyRelevant: c.whyRelevant })),
+    pensumKobling: pensumKoblinger?.get(a.id),
   }));
+
+  // Lets her link straight from Canvas to a given week's articles, e.g.
+  // /?emne=OAL117&uke=5. Filtered here rather than in the DB query since
+  // koblinger live in her feed, not ours — so this only searches within
+  // the page of articles already fetched above (bounded by `limit`), not
+  // the full archive. Fine for now; revisit if that turns out to matter.
+  if (emne) {
+    cards = cards.filter((c) =>
+      c.pensumKobling?.temaer.some(
+        (t) => t.emne === emne && (uke === undefined || t.uke === uke),
+      ),
+    );
+  }
 
   const hasMore = total > cards.length;
   const moreParams = new URLSearchParams();
