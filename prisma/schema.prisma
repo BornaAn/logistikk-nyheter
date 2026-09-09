@@ -92,3 +92,19 @@ model FetchLog {
   summariesFailed Int
   errors    String?
 }
+
+// Single-row durable cache of the last successfully fetched pensum-
+// koblinger feed (see src/lib/pensumKoblinger.ts). Next's own fetch cache
+// already avoids re-fetching within the hour, but its stale-on-error
+// guarantee applies clearly to whole-page ISR regeneration, not
+// unambiguously to a single fetch() inside a Server Component, and it
+// doesn't survive a redeploy either way. This makes "keep showing the last
+// good version if the source is briefly down" an explicit, verifiable
+// guarantee instead of relying on undocumented framework internals —
+// deliberately important since the teacher may be showing this live in a
+// lecture.
+model PensumFeedCache {
+  id         String   @id @default("singleton")
+  fetchedAt  DateTime @default(now())
+  data       Json
+}
