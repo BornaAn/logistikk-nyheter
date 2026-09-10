@@ -162,7 +162,16 @@ export async function summarizeArticle(
     sufficientContent?: unknown;
     relatedConcepts?: unknown;
   };
-  const summary = typeof parsed.summary === "string" ? parsed.summary.trim() : "";
+  // Defensive: a handful of responses in late August 2026 had Claude bleed
+  // old-style XML tool-call formatting (</summary>, <parameter ...>,
+  // </invoke>) into the tail of the summary STRING VALUE itself, inside an
+  // otherwise well-formed tool_use block — not a parsing bug here, the
+  // model just kept generating past where it should have stopped. Strip
+  // anything from the first such marker onward rather than trust the
+  // string is clean just because it's the right type.
+  const rawSummary = typeof parsed.summary === "string" ? parsed.summary : "";
+  const leakMarker = rawSummary.search(/<\/summary>|<parameter[\s>]|<\/invoke>/);
+  const summary = (leakMarker === -1 ? rawSummary : rawSummary.slice(0, leakMarker)).trim();
   const category = CATEGORIES.includes(parsed.category as Category)
     ? (parsed.category as Category)
     : "globalt_geopolitikk";
