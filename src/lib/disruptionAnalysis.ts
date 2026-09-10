@@ -249,7 +249,13 @@ export async function analyzeDisruption(
   const response = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 4096,
-    system: SYSTEM_PROMPT,
+    system: [
+      {
+        type: "text",
+        text: SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral", ttl: "1h" },
+      },
+    ],
     tools: [DISRUPTION_TOOL],
     tool_choice: { type: "tool", name: "return_analysis" },
     messages: [{ role: "user", content: userMessage }],

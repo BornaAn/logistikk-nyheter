@@ -32,7 +32,10 @@ Reglene er strenge:
 - Avslutt IKKE med en oppfordring om å lese hele artikkelen — det håndterer nettsiden selv.
 - Du kan bruke ett enkeltstående sitat under ca. 15 ord hvis det er avgjørende for meningen, men ikke mer.
 - Returner alltid en kategori fra den gitte listen, selv om du må velge den som passer best.
-- Du får også en liste med fagbegreper fra et universitetskompendium (data science i supply chain management). Hvis 1-3 av disse begrepene er GENUINT relevante for akkurat denne saken — altså at kildeteksten faktisk illustrerer eller berører det begrepet, ikke bare at det er logistikk-relatert i vid forstand — inkluder dem i "relatedConcepts", hver med én kort, konkret setning (basert kun på kildeteksten) om hvorfor begrepet er relevant for denne saken. Bruk ALDRI et begrep som ikke står i den gitte listen. Er ingen av begrepene genuint relevante, la "relatedConcepts" være en tom liste — ikke tving det inn.`;
+- Du får også en liste med fagbegreper fra et universitetskompendium (data science i supply chain management). Hvis 1-3 av disse begrepene er GENUINT relevante for akkurat denne saken — altså at kildeteksten faktisk illustrerer eller berører det begrepet, ikke bare at det er logistikk-relatert i vid forstand — inkluder dem i "relatedConcepts", hver med én kort, konkret setning (basert kun på kildeteksten) om hvorfor begrepet er relevant for denne saken. Bruk ALDRI et begrep som ikke står i den gitte listen. Er ingen av begrepene genuint relevante, la "relatedConcepts" være en tom liste — ikke tving det inn.
+
+Ordliste (fagbegreper du kan velge relatedConcepts fra):
+${CONCEPT_GLOSSARY_TEXT}`;
 
 let client: Anthropic | null = null;
 
@@ -125,6 +128,15 @@ export async function summarizeArticle(
 ): Promise<SummarizeResult> {
   const anthropic = getClient();
 
+  // Stable content (rules + the 46-concept glossary, ~8.5K tokens) lives in
+  // SYSTEM_PROMPT and never changes between calls — only the per-article
+  // bits below do. Keeping the variable content OUT of the cached system
+  // block, and never reordering it before the glossary, is what makes the
+  // cache_control breakpoint actually hit on repeat calls: Anthropic caches
+  // a byte-exact prefix, so if a per-article field were interleaved before
+  // the glossary (as it was previously, when the glossary lived in the user
+  // message after the article text), every call would get a different
+  // prefix and never hit cache at all.
   const userMessage = [
     `Artikkeltittel: ${input.title}`,
     `Kilde: ${input.sourceName}`,
@@ -135,14 +147,18 @@ export async function summarizeArticle(
       : []),
     `Uthentet artikkeltekst:`,
     input.extractedText.slice(0, 12000),
-    `\nOrdliste (fagbegreper du kan velge relatedConcepts fra):`,
-    CONCEPT_GLOSSARY_TEXT,
   ].join("\n");
 
   const response = await anthropic.messages.create({
     model: MODEL,
     max_tokens: 1024,
-    system: SYSTEM_PROMPT,
+    system: [
+      {
+        type: "text",
+        text: SYSTEM_PROMPT,
+        cache_control: { type: "ephemeral", ttl: "1h" },
+      },
+    ],
     tools: [SUMMARY_TOOL],
     tool_choice: { type: "tool", name: "return_summary" },
     messages: [{ role: "user", content: userMessage }],
