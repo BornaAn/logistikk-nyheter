@@ -104,8 +104,10 @@ const CONCEPT_EXAMPLES: Record<string, string> = {
 
 /** Flavor text for each daily bottleneck — invented but realistic
  * logistics scenarios, not tied to any real event or article. Purely
- * narrative dressing for the quiz question that follows. */
-const BOTTLENECK_SCENARIOS = [
+ * narrative dressing for the quiz question that follows. Exported for
+ * dailyQuiz.ts, which reuses the same list for its Claude-generated
+ * rounds rather than maintaining a second one. */
+export const BOTTLENECK_SCENARIOS = [
   "Kø ved tollkontrollen på grensen legger igjen flere timers forsinkelse.",
   "Snøvær har gjort E6 vanskelig fremkommelig, og trafikken krabber avgårde.",
   "Havnearbeiderne varsler kortvarig arbeidsnedleggelse ved lasting av containerskipet.",

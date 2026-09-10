@@ -94,6 +94,19 @@ model DisruptionAnalysis {
   createdAt DateTime @default(now())
 }
 
+// Cached Claude-generated "Dagens spill" round (src/lib/dailyQuiz.ts) — one
+// row per day per mode (generell/oal121/oal118), so every visitor who opens
+// the same mode on the same day gets the identical five questions (fair,
+// shareable), but the questions themselves are freshly written each day
+// rather than picked from a small fixed set of pre-written texts. All three
+// modes reseed daily; oal121/oal118 additionally stay scoped to that
+// course's pensum through the current week. `key` is `${dateKey}-${mode}`.
+model DailyQuiz {
+  key       String   @id
+  data      Json
+  createdAt DateTime @default(now())
+}
+
 // Links an article to 0-3 entries from the curated glossary in
 // src/lib/concepts.ts. conceptSlug references that code-based list (same
 // pattern as Article.sourceName referencing sources.ts) rather than a

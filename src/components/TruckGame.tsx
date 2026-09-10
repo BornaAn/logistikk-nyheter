@@ -1,14 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
-import { getDailyChallenge, todaysDateKey, type QuizQuestion } from "@/lib/quiz";
+import { useEffect, useState } from "react";
+import { todaysDateKey, type QuizQuestion } from "@/lib/quiz";
 import { concepts as allConcepts, type Concept } from "@/lib/concepts";
-import {
-  getCoursePensumConcepts,
-  currentIsoWeek,
-  currentIsoWeekKey,
-  type CourseSlug,
-} from "@/lib/semesterPensum";
+import { getCoursePensumConcepts, currentIsoWeek, type CourseSlug } from "@/lib/semesterPensum";
 
 type Mode = "generell" | CourseSlug;
 
@@ -29,12 +24,12 @@ const MODES: ModeInfo[] = [
   {
     mode: "oal121",
     title: "Kun ØAL121",
-    description: `Bare begreper fra ØAL121-pensum til og med uke ${WEEK}. Samme fem spørsmål hele uken, så du kan øve deg.`,
+    description: `Bare begreper fra ØAL121-pensum til og med uke ${WEEK}. Nye spørsmål hver dag.`,
   },
   {
     mode: "oal118",
     title: "Kun ØAL118",
-    description: `Bare begreper fra ØAL118-pensum til og med uke ${WEEK}. Samme fem spørsmål hele uken, så du kan øve deg.`,
+    description: `Bare begreper fra ØAL118-pensum til og med uke ${WEEK}. Nye spørsmål hver dag.`,
   },
 ];
 
@@ -46,6 +41,21 @@ interface SavedResult {
 
 function storageKey(dateKey: string, mode: Mode): string {
   return `truckgame-${dateKey}-${mode}`;
+}
+
+/** Chosen course pools are computed once per module load (not per render) —
+ * cheap regex work over 46 concepts, but no reason to redo it per mode
+ * switch. `generell` needs no pool at all, it uses the full glossary. Only
+ * used here to show the "tynt pensum ennå" hint — the actual question
+ * generation happens server-side in /api/spill/[mode], which recomputes
+ * the same pool itself. */
+const COURSE_POOLS: Record<CourseSlug, Concept[]> = {
+  oal121: getCoursePensumConcepts("oal121", WEEK),
+  oal118: getCoursePensumConcepts("oal118", WEEK),
+};
+
+function poolSizeForMode(mode: Mode): number {
+  return mode === "generell" ? allConcepts.length : COURSE_POOLS[mode].length;
 }
 
 function TruckRoad({ total, current }: { total: number; current: number }) {
@@ -90,29 +100,18 @@ function TruckRoad({ total, current }: { total: number; current: number }) {
   );
 }
 
-/** Chosen course pools are computed once per module load (not per render) —
- * cheap regex work over 46 concepts, but no reason to redo it per mode
- * switch. `generell` needs no pool at all, it uses the full glossary. */
-const COURSE_POOLS: Record<CourseSlug, Concept[]> = {
-  oal121: getCoursePensumConcepts("oal121", WEEK),
-  oal118: getCoursePensumConcepts("oal118", WEEK),
-};
-
-function poolForMode(mode: Mode): Concept[] {
-  return mode === "generell" ? allConcepts : COURSE_POOLS[mode];
-}
-
 function ModeSelector({ onSelect }: { onSelect: (mode: Mode) => void }) {
   return (
     <div className="rounded-lg border border-card-border bg-card card-shadow p-5 sm:p-6">
       <h2 className="font-serif text-lg font-bold mb-1">Velg dagens rute</h2>
       <p className="text-xs text-muted mb-4">
-        Samme rute for alle som velger samme variant samtidig — se beskrivelsen under hver for
-        hvor ofte den fornyes.
+        Samme rute for alle som velger samme variant i dag — nye, friskt formulerte spørsmål hver
+        dag.
       </p>
       <div className="flex flex-col gap-2.5">
         {MODES.map((m) => {
-          const thin = m.mode !== "generell" && poolForMode(m.mode).length < 5;
+          const size = poolSizeForMode(m.mode);
+          const thin = m.mode !== "generell" && size < 5;
           return (
             <button
               key={m.mode}
@@ -124,8 +123,7 @@ function ModeSelector({ onSelect }: { onSelect: (mode: Mode) => void }) {
               <p className="text-xs text-muted mt-0.5">{m.description}</p>
               {thin && (
                 <p className="text-[0.7rem] text-amber-700 dark:text-amber-400 mt-1">
-                  Tidlig i semesteret — færre spørsmål enn vanlig ({poolForMode(m.mode).length}{" "}
-                  tilgjengelige begreper).
+                  Tidlig i semesteret — færre spørsmål enn vanlig ({size} tilgjengelige begreper).
                 </p>
               )}
             </button>
@@ -139,15 +137,8 @@ function ModeSelector({ onSelect }: { onSelect: (mode: Mode) => void }) {
 export function TruckGame() {
   const [dateKey] = useState(todaysDateKey);
   const [mode, setMode] = useState<Mode | null>(null);
-  const questions = useMemo<QuizQuestion[]>(() => {
-    if (!mode) return [];
-    const pool = poolForMode(mode);
-    // Generell reseeds daily (fresh trivia); the course modes reseed weekly
-    // (currentIsoWeekKey) so a student gets the same five questions all
-    // week to actually practice, not a new random five every day.
-    const seedKey = mode === "generell" ? todaysDateKey() : currentIsoWeekKey();
-    return getDailyChallenge(seedKey, 5, pool, mode);
-  }, [mode]);
+  const [questions, setQuestions] = useState<QuizQuestion[]>([]);
+  const [loadError, setLoadError] = useState(false);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -170,6 +161,31 @@ export function TruckGame() {
     setHydrated(true);
   }, [dateKey, mode]);
 
+  useEffect(() => {
+    if (!mode) return;
+    let cancelled = false;
+    // No setLoadError(false) reset here — changeMode() already clears it
+    // when switching modes, and it starts false on mount.
+    fetch(`/api/spill/${mode}`)
+      .then((res) => {
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        return res.json();
+      })
+      .then((json) => {
+        if (cancelled) return;
+        if (!Array.isArray(json.questions) || json.questions.length === 0) {
+          throw new Error("Tom quiz-runde");
+        }
+        setQuestions(json.questions as QuizQuestion[]);
+      })
+      .catch(() => {
+        if (!cancelled) setLoadError(true);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [mode]);
+
   if (!mode) return <ModeSelector onSelect={setMode} />;
   if (!hydrated) return null;
 
@@ -177,6 +193,8 @@ export function TruckGame() {
 
   function changeMode() {
     setMode(null);
+    setQuestions([]);
+    setLoadError(false);
     setCurrent(0);
     setSelected(null);
     setAnswers([]);
@@ -184,7 +202,24 @@ export function TruckGame() {
     setHydrated(false);
   }
 
-  const finished = savedResult !== null || current >= questions.length;
+  if (loadError) {
+    return (
+      <div className="rounded-lg border border-card-border bg-card card-shadow p-6 text-center">
+        <p className="text-sm text-foreground/80 mb-3">
+          Klarte ikke å hente dagens spørsmål akkurat nå. Prøv igjen om litt.
+        </p>
+        <button
+          type="button"
+          onClick={changeMode}
+          className="text-xs font-semibold text-accent hover:underline underline-offset-2 cursor-pointer"
+        >
+          ← Tilbake til rutevalg
+        </button>
+      </div>
+    );
+  }
+
+  const finished = savedResult !== null || (questions.length > 0 && current >= questions.length);
   const correctCount =
     savedResult?.correctCount ??
     answers.filter((a, i) => a === questions[i]?.correctIndex).length;
@@ -218,6 +253,14 @@ export function TruckGame() {
         >
           Prøv en annen variant →
         </button>
+      </div>
+    );
+  }
+
+  if (questions.length === 0) {
+    return (
+      <div className="rounded-lg border border-card-border bg-card card-shadow p-6 text-center">
+        <p className="text-sm text-muted animate-pulse">Henter dagens rute …</p>
       </div>
     );
   }
