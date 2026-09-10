@@ -1,6 +1,7 @@
 import Anthropic from "@anthropic-ai/sdk";
 import type { Category } from "@prisma/client";
 import { concepts } from "./concepts";
+import { sectors, SECTOR_SLUGS } from "./sectors";
 
 const MODEL = "claude-sonnet-5";
 
@@ -15,6 +16,10 @@ const CATEGORIES: Category[] = [
 const CONCEPT_SLUGS = concepts.map((c) => c.slug);
 const CONCEPT_GLOSSARY_TEXT = concepts
   .map((c) => `- ${c.slug}: ${c.name} — ${c.definition}`)
+  .join("\n");
+
+const SECTOR_LIST_TEXT = sectors
+  .map((s) => `- ${s.slug}: ${s.name} — ${s.description}`)
   .join("\n");
 
 const SYSTEM_PROMPT = `Du oppsummerer en nyhetsartikkel om logistikk/frakt/handel for en norsk logistikk-nyhetsside.
@@ -33,9 +38,13 @@ Reglene er strenge:
 - Du kan bruke ett enkeltstående sitat under ca. 15 ord hvis det er avgjørende for meningen, men ikke mer.
 - Returner alltid en kategori fra den gitte listen, selv om du må velge den som passer best.
 - Du får også en liste med fagbegreper fra et universitetskompendium (data science i supply chain management). Hvis 1-3 av disse begrepene er GENUINT relevante for akkurat denne saken — altså at kildeteksten faktisk illustrerer eller berører det begrepet, ikke bare at det er logistikk-relatert i vid forstand — inkluder dem i "relatedConcepts", hver med én kort, konkret setning (basert kun på kildeteksten) om hvorfor begrepet er relevant for denne saken. Bruk ALDRI et begrep som ikke står i den gitte listen. Er ingen av begrepene genuint relevante, la "relatedConcepts" være en tom liste — ikke tving det inn.
+- Du får også en liste med bransjesektorer. Hvis saken GENUINT ville betydd noe for en bedrift som opererer i 1-2 av disse sektorene — altså at nyheten faktisk påvirker deres forsyningskjede, kostnader, tilgang på råvarer/transport eller marked, ikke bare at sektoren er nevnt i forbifarten — inkluder dem i "relatedSectors". En generell sak om f.eks. havnearbeiderstreik er relevant for "sjømat" hvis fisk faktisk eksporteres gjennom den havnen, men ikke bare fordi ordet "fisk" nevnes et sted. Bruk ALDRI en sektor som ikke står i den gitte listen. Er ingen genuint relevante, la "relatedSectors" være en tom liste.
 
 Ordliste (fagbegreper du kan velge relatedConcepts fra):
-${CONCEPT_GLOSSARY_TEXT}`;
+${CONCEPT_GLOSSARY_TEXT}
+
+Bransjesektorer (du kan velge relatedSectors fra):
+${SECTOR_LIST_TEXT}`;
 
 let client: Anthropic | null = null;
 
@@ -73,6 +82,9 @@ export interface SummarizeResult {
   /** 0-3 glossary concepts (src/lib/concepts.ts) Claude judged genuinely
    * relevant to this article, each with a one-sentence grounded reason. */
   relatedConcepts: { slug: string; whyRelevant: string }[];
+  /** 0-2 sectors (src/lib/sectors.ts) Claude judged this article genuinely
+   * matters to, e.g. for a "Sjømat og fiskeri" filtered view. */
+  relatedSectors: string[];
 }
 
 const SUMMARY_TOOL: Anthropic.Tool = {
@@ -118,8 +130,19 @@ const SUMMARY_TOOL: Anthropic.Tool = {
           required: ["slug", "whyRelevant"],
         },
       },
+      relatedSectors: {
+        type: "array",
+        maxItems: 2,
+        description:
+          "0-2 bransjesektorer fra den gitte listen som denne saken genuint betyr noe for. Tom liste hvis ingen passer.",
+        items: {
+          type: "string",
+          enum: SECTOR_SLUGS,
+          description: "Slug for sektoren, nøyaktig som oppgitt i listen.",
+        },
+      },
     },
-    required: ["sufficientContent", "summary", "category", "relatedConcepts"],
+    required: ["sufficientContent", "summary", "category", "relatedConcepts", "relatedSectors"],
   },
 };
 
@@ -177,6 +200,7 @@ export async function summarizeArticle(
     category?: unknown;
     sufficientContent?: unknown;
     relatedConcepts?: unknown;
+    relatedSectors?: unknown;
   };
   // Defensive: a handful of responses in late August 2026 had Claude bleed
   // old-style XML tool-call formatting (</summary>, <parameter ...>,
@@ -220,5 +244,12 @@ export async function summarizeArticle(
         .map((c) => ({ slug: c.slug, whyRelevant: c.whyRelevant.trim() }))
     : [];
 
-  return { summary, category, sufficientContent, relatedConcepts };
+  // Same defensive pattern as relatedConcepts: drop anything not in the
+  // fixed slug list, dedupe (avoids the (articleId, sectorSlug) unique
+  // constraint tripping on a repeated slug).
+  const relatedSectors = Array.isArray(parsed.relatedSectors)
+    ? [...new Set(parsed.relatedSectors.filter((s): s is string => SECTOR_SLUGS.includes(s as string)))].slice(0, 2)
+    : [];
+
+  return { summary, category, sufficientContent, relatedConcepts, relatedSectors };
 }

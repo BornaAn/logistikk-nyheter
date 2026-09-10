@@ -303,6 +303,23 @@ async function runSummaryQueue(): Promise<{
         }
       }
 
+      // Same isolation as concepts above — a sector-tagging failure must
+      // never undo an already-successful summary.
+      if (result.relatedSectors.length > 0) {
+        try {
+          await prisma.articleSector.createMany({
+            data: result.relatedSectors.map((sectorSlug) => ({
+              articleId: article.id,
+              sectorSlug,
+            })),
+          });
+        } catch (err) {
+          errors.push(
+            `[${article.sourceName}] "${article.title}": kunne ikke lagre sektorer: ${(err as Error).message}`,
+          );
+        }
+      }
+
       ok++;
     } catch (err) {
       failed++;

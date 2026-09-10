@@ -57,12 +57,28 @@ model Article {
   createdAt DateTime @updatedAt
 
   concepts ArticleConcept[]
+  sectors  ArticleSector[]
   disruptionAnalysis DisruptionAnalysis?
 
   @@index([publishedAt])
   @@index([category])
   @@index([sourceName])
   @@index([summaryStatus])
+}
+
+// Links an article to 0-2 entries from the curated list in
+// src/lib/sectors.ts — same pattern as ArticleConcept. Lets a sector page
+// (e.g. "Sjømat og fiskeri") show only articles Claude judged genuinely
+// relevant to businesses in that sector, not just keyword matches.
+model ArticleSector {
+  id         String @id @default(cuid())
+  articleId  String
+  sectorSlug String
+
+  article Article @relation(fields: [articleId], references: [id], onDelete: Cascade)
+
+  @@unique([articleId, sectorSlug])
+  @@index([sectorSlug])
 }
 
 // On-demand "Analyser forstyrrelse" result (src/lib/disruptionAnalysis.ts),

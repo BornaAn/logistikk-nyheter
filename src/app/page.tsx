@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { ArticleCard, type ArticleCardData } from "@/components/ArticleCard";
 import { CollapsibleFilters } from "@/components/CollapsibleFilters";
 import { FilterBar } from "@/components/FilterBar";
+import { SectorBar } from "@/components/SectorBar";
 import { HomeLink } from "@/components/HomeLink";
 import { Logo } from "@/components/Logo";
 import { ThemeToggle } from "@/components/ThemeToggle";
@@ -12,6 +13,7 @@ import { formatRelativeTime } from "@/lib/format";
 import { getPensumKoblinger } from "@/lib/pensumKoblinger";
 import { sources } from "@/lib/sources";
 import { scrapedSources } from "@/lib/scrapers";
+import { SECTOR_SLUGS } from "@/lib/sectors";
 import type { Category } from "@prisma/client";
 
 const PAGE_SIZE = 40;
@@ -26,6 +28,7 @@ interface PageProps {
     // the teacher's pensum feed has real data — see pensumKoblinger.ts.
     emne?: string;
     uke?: string;
+    sector?: string;
   }>;
 }
 
@@ -52,11 +55,13 @@ export default async function Home({ searchParams }: PageProps) {
   const limit = Math.max(PAGE_SIZE, parseInt(params.limit ?? "", 10) || PAGE_SIZE);
   const emne = params.emne?.trim() || undefined;
   const uke = params.uke ? parseInt(params.uke, 10) : undefined;
+  const sector = SECTOR_SLUGS.includes(params.sector ?? "") ? params.sector : undefined;
 
   const where = {
     aiSummary: { not: null },
     ...(category ? { category } : {}),
     ...(source ? { sourceName: source } : {}),
+    ...(sector ? { sectors: { some: { sectorSlug: sector } } } : {}),
     ...(q
       ? {
           OR: [
@@ -140,12 +145,14 @@ export default async function Home({ searchParams }: PageProps) {
   const moreParams = new URLSearchParams();
   if (category) moreParams.set("category", category);
   if (source) moreParams.set("source", source);
+  if (sector) moreParams.set("sector", sector);
   if (q) moreParams.set("q", q);
   moreParams.set("limit", String(limit + PAGE_SIZE));
 
   const sourceLink = (name: string) => {
     const p = new URLSearchParams();
     if (category) p.set("category", category);
+    if (sector) p.set("sector", sector);
     if (name !== source) p.set("source", name);
     if (q) p.set("q", q);
     return `/?${p.toString()}`;
@@ -192,11 +199,17 @@ export default async function Home({ searchParams }: PageProps) {
             </div>
           </div>
 
-          <CollapsibleFilters>
-            <Suspense fallback={null}>
-              <FilterBar sources={activeSources.map((s) => s.name)} />
-            </Suspense>
-          </CollapsibleFilters>
+          <Suspense fallback={null}>
+            <SectorBar />
+          </Suspense>
+
+          <div className="mt-3">
+            <CollapsibleFilters>
+              <Suspense fallback={null}>
+                <FilterBar sources={activeSources.map((s) => s.name)} />
+              </Suspense>
+            </CollapsibleFilters>
+          </div>
         </div>
       </header>
 
@@ -204,11 +217,28 @@ export default async function Home({ searchParams }: PageProps) {
         <div className="min-w-0">
           {cards.length === 0 ? (
             <div className="rounded-lg border border-dashed border-card-border p-8 text-center text-muted">
-              <p className="font-medium text-foreground mb-1">Ingen artikler ennå</p>
-              <p className="text-sm">
-                Kjør innhentingsjobben (<code>/api/cron</code>) for å hente de første
-                sakene, eller juster filtrene dine.
-              </p>
+              {allTimeTotal === 0 ? (
+                <>
+                  <p className="font-medium text-foreground mb-1">Ingen artikler ennå</p>
+                  <p className="text-sm">
+                    Kjør innhentingsjobben (<code>/api/cron</code>) for å hente de første
+                    sakene.
+                  </p>
+                </>
+              ) : sector ? (
+                <>
+                  <p className="font-medium text-foreground mb-1">Ingen saker i denne sektoren ennå</p>
+                  <p className="text-sm">
+                    Sektor-merking er nytt og gjelder kun artikler hentet inn fra nå av — prøv
+                    igjen om noen timer, eller juster filtrene dine.
+                  </p>
+                </>
+              ) : (
+                <>
+                  <p className="font-medium text-foreground mb-1">Ingen treff</p>
+                  <p className="text-sm">Prøv å justere filtrene dine.</p>
+                </>
+              )}
             </div>
           ) : (
             <>
