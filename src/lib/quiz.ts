@@ -160,15 +160,22 @@ function seededShuffle<T>(items: T[], rand: () => number): T[] {
   return arr;
 }
 
-function pickDecoys(exclude: Concept, rand: () => number): Concept[] {
-  return seededShuffle(
-    concepts.filter((c) => c.slug !== exclude.slug),
-    rand,
-  ).slice(0, 3);
+function pickDecoys(exclude: Concept, pool: Concept[], rand: () => number): Concept[] {
+  // Falls back to the full glossary if the pool is too thin for 3 distinct
+  // wrong answers (shouldn't happen with the current course pools, but a
+  // quiz breaking because a pool is one concept short is worse than a
+  // decoy occasionally coming from outside the course).
+  const candidates = pool.filter((c) => c.slug !== exclude.slug);
+  const source = candidates.length >= 3 ? candidates : concepts.filter((c) => c.slug !== exclude.slug);
+  return seededShuffle(source, rand).slice(0, 3);
 }
 
-function buildDefinitionQuestion(concept: Concept, rand: () => number): Omit<QuizQuestion, "scenario"> {
-  const decoys = pickDecoys(concept, rand);
+function buildDefinitionQuestion(
+  concept: Concept,
+  pool: Concept[],
+  rand: () => number,
+): Omit<QuizQuestion, "scenario"> {
+  const decoys = pickDecoys(concept, pool, rand);
   const correctText = concept.definition;
   const options = seededShuffle([correctText, ...decoys.map((d) => d.definition)], rand);
   return {
@@ -180,8 +187,12 @@ function buildDefinitionQuestion(concept: Concept, rand: () => number): Omit<Qui
   };
 }
 
-function buildSituationQuestion(concept: Concept, rand: () => number): Omit<QuizQuestion, "scenario"> {
-  const decoys = pickDecoys(concept, rand);
+function buildSituationQuestion(
+  concept: Concept,
+  pool: Concept[],
+  rand: () => number,
+): Omit<QuizQuestion, "scenario"> {
+  const decoys = pickDecoys(concept, pool, rand);
   const correctText = concept.name;
   const options = seededShuffle([correctText, ...decoys.map((d) => d.name)], rand);
   return {
@@ -196,18 +207,30 @@ function buildSituationQuestion(concept: Concept, rand: () => number): Omit<Quiz
 /** Today's route: `count` questions, same for every visitor on a given
  * calendar day (UTC date string as the seed), different each day. Mixes
  * "what does X mean" and the harder "which concept is this?" question
- * types — the latter only for concepts with a written example scenario. */
-export function getDailyChallenge(date: Date, count = 5): QuizQuestion[] {
-  const seed = date.toISOString().slice(0, 10);
+ * types — the latter only for concepts with a written example scenario.
+ *
+ * `pool` narrows which concepts the round draws from (e.g. one course's
+ * pensum so far this semester) — defaults to the full glossary for the
+ * general quiz. `poolKey` folds into the seed so the general/ØAL121/ØAL118
+ * rounds are independent puzzles on the same day, not the same five
+ * concepts re-skinned three times. */
+export function getDailyChallenge(
+  date: Date,
+  count = 5,
+  pool: Concept[] = concepts,
+  poolKey = "generell",
+): QuizQuestion[] {
+  const seed = `${date.toISOString().slice(0, 10)}-${poolKey}`;
   const rand = seededRandom(seed);
-  const chosen = seededShuffle(concepts, rand).slice(0, count);
-  const scenarios = seededShuffle(BOTTLENECK_SCENARIOS, rand).slice(0, count);
+  const n = Math.min(count, pool.length);
+  const chosen = seededShuffle(pool, rand).slice(0, n);
+  const scenarios = seededShuffle(BOTTLENECK_SCENARIOS, rand).slice(0, n);
 
   return chosen.map((concept, i) => {
     const useSituation = Boolean(CONCEPT_EXAMPLES[concept.slug]) && rand() < 0.5;
     const question = useSituation
-      ? buildSituationQuestion(concept, rand)
-      : buildDefinitionQuestion(concept, rand);
+      ? buildSituationQuestion(concept, pool, rand)
+      : buildDefinitionQuestion(concept, pool, rand);
     return { ...question, scenario: scenarios[i] };
   });
 }

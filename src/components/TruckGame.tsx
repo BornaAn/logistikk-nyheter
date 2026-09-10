@@ -1,7 +1,37 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getDailyChallenge, todaysDateKey, type QuizQuestion } from "@/lib/quiz";
+import { concepts as allConcepts, type Concept } from "@/lib/concepts";
+import { getCoursePensumConcepts, currentIsoWeek, type CourseSlug } from "@/lib/semesterPensum";
+
+type Mode = "generell" | CourseSlug;
+
+interface ModeInfo {
+  mode: Mode;
+  title: string;
+  description: string;
+}
+
+const WEEK = currentIsoWeek();
+
+const MODES: ModeInfo[] = [
+  {
+    mode: "generell",
+    title: "Generell",
+    description: "Blander begreper fra hele ordlisten — begge fag, alle uker.",
+  },
+  {
+    mode: "oal121",
+    title: "Kun ØAL121",
+    description: `Bare begreper fra ØAL121-pensum til og med uke ${WEEK}.`,
+  },
+  {
+    mode: "oal118",
+    title: "Kun ØAL118",
+    description: `Bare begreper fra ØAL118-pensum til og med uke ${WEEK}.`,
+  },
+];
 
 interface SavedResult {
   correctCount: number;
@@ -9,8 +39,8 @@ interface SavedResult {
   answers: number[];
 }
 
-function storageKey(dateKey: string): string {
-  return `truckgame-${dateKey}`;
+function storageKey(dateKey: string, mode: Mode): string {
+  return `truckgame-${dateKey}-${mode}`;
 }
 
 function TruckRoad({ total, current }: { total: number; current: number }) {
@@ -55,9 +85,60 @@ function TruckRoad({ total, current }: { total: number; current: number }) {
   );
 }
 
+/** Chosen course pools are computed once per module load (not per render) —
+ * cheap regex work over 46 concepts, but no reason to redo it per mode
+ * switch. `generell` needs no pool at all, it uses the full glossary. */
+const COURSE_POOLS: Record<CourseSlug, Concept[]> = {
+  oal121: getCoursePensumConcepts("oal121", WEEK),
+  oal118: getCoursePensumConcepts("oal118", WEEK),
+};
+
+function poolForMode(mode: Mode): Concept[] {
+  return mode === "generell" ? allConcepts : COURSE_POOLS[mode];
+}
+
+function ModeSelector({ onSelect }: { onSelect: (mode: Mode) => void }) {
+  return (
+    <div className="rounded-lg border border-card-border bg-card card-shadow p-5 sm:p-6">
+      <h2 className="font-serif text-lg font-bold mb-1">Velg dagens rute</h2>
+      <p className="text-xs text-muted mb-4">
+        Samme fem flaskehalser for alle som velger samme variant i dag — kom tilbake i morgen for
+        en ny rute.
+      </p>
+      <div className="flex flex-col gap-2.5">
+        {MODES.map((m) => {
+          const thin = m.mode !== "generell" && poolForMode(m.mode).length < 5;
+          return (
+            <button
+              key={m.mode}
+              type="button"
+              onClick={() => onSelect(m.mode)}
+              className="text-left rounded-md border border-card-border px-4 py-3 transition-colors hover:border-accent hover:bg-accent/5 cursor-pointer"
+            >
+              <p className="font-serif font-bold text-foreground">{m.title}</p>
+              <p className="text-xs text-muted mt-0.5">{m.description}</p>
+              {thin && (
+                <p className="text-[0.7rem] text-amber-700 dark:text-amber-400 mt-1">
+                  Tidlig i semesteret — færre spørsmål enn vanlig ({poolForMode(m.mode).length}{" "}
+                  tilgjengelige begreper).
+                </p>
+              )}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 export function TruckGame() {
   const [dateKey] = useState(todaysDateKey);
-  const [questions] = useState<QuizQuestion[]>(() => getDailyChallenge(new Date(), 5));
+  const [mode, setMode] = useState<Mode | null>(null);
+  const questions = useMemo<QuizQuestion[]>(() => {
+    if (!mode) return [];
+    const pool = poolForMode(mode);
+    return getDailyChallenge(new Date(), 5, pool, mode);
+  }, [mode]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);
   const [answers, setAnswers] = useState<number[]>([]);
@@ -65,11 +146,12 @@ export function TruckGame() {
   const [hydrated, setHydrated] = useState(false);
 
   useEffect(() => {
+    if (!mode) return;
     // Reads previously-saved external state (localStorage) on mount, the
     // same justified pattern ThemeToggle uses for the DOM theme class.
     let result: SavedResult | null = null;
     try {
-      const raw = localStorage.getItem(storageKey(dateKey));
+      const raw = localStorage.getItem(storageKey(dateKey, mode));
       if (raw) result = JSON.parse(raw);
     } catch {
       // Private-mode/blocked storage — just play without persistence.
@@ -77,9 +159,21 @@ export function TruckGame() {
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setSavedResult(result);
     setHydrated(true);
-  }, [dateKey]);
+  }, [dateKey, mode]);
 
+  if (!mode) return <ModeSelector onSelect={setMode} />;
   if (!hydrated) return null;
+
+  const modeTitle = MODES.find((m) => m.mode === mode)?.title ?? "Generell";
+
+  function changeMode() {
+    setMode(null);
+    setCurrent(0);
+    setSelected(null);
+    setAnswers([]);
+    setSavedResult(null);
+    setHydrated(false);
+  }
 
   const finished = savedResult !== null || current >= questions.length;
   const correctCount =
@@ -98,7 +192,7 @@ export function TruckGame() {
           {allCorrect ? "Lastebilen kom helt frem til B!" : "Lastebilen kom frem til B"}
         </h2>
         <p className="text-sm text-muted mb-4">
-          Du svarte riktig på {correctCount} av {total} flaskehalser i dag.
+          Du svarte riktig på {correctCount} av {total} flaskehalser i dag — variant «{modeTitle}».
         </p>
         <div className="flex justify-center gap-1.5 mb-1">
           {Array.from({ length: total }, (_, i) => (
@@ -107,7 +201,14 @@ export function TruckGame() {
             </span>
           ))}
         </div>
-        <p className="text-xs text-muted mt-4">Kom tilbake i morgen for en ny rute.</p>
+        <p className="text-xs text-muted mt-4 mb-3">Kom tilbake i morgen for en ny rute.</p>
+        <button
+          type="button"
+          onClick={changeMode}
+          className="text-xs font-semibold text-accent hover:underline underline-offset-2 cursor-pointer"
+        >
+          Prøv en annen variant →
+        </button>
       </div>
     );
   }
@@ -120,7 +221,7 @@ export function TruckGame() {
   }
 
   function next() {
-    if (selected === null) return;
+    if (selected === null || !mode) return;
     const nextAnswers = [...answers, selected];
     setAnswers(nextAnswers);
 
@@ -131,7 +232,7 @@ export function TruckGame() {
         answers: nextAnswers,
       };
       try {
-        localStorage.setItem(storageKey(dateKey), JSON.stringify(result));
+        localStorage.setItem(storageKey(dateKey, mode), JSON.stringify(result));
       } catch {
         // Ignore — the round still finishes, it just won't be remembered.
       }
@@ -152,9 +253,14 @@ export function TruckGame() {
           Flaskehals {current + 1} av {questions.length}
         </span>
       </div>
-      <p className="text-xs text-muted mb-4">
-        Svar riktig for å komme forbi flaskehalsen og videre mot B.
-      </p>
+      <div className="flex items-center justify-between mb-4">
+        <p className="text-xs text-muted">
+          Svar riktig for å komme forbi flaskehalsen og videre mot B.
+        </p>
+        <span className="shrink-0 rounded-full border border-card-border px-2 py-0.5 text-[0.65rem] font-semibold uppercase tracking-wide text-muted">
+          {modeTitle}
+        </span>
+      </div>
 
       <TruckRoad total={questions.length} current={current} />
 
