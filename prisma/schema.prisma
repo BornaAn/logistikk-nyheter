@@ -57,11 +57,25 @@ model Article {
   createdAt DateTime @updatedAt
 
   concepts ArticleConcept[]
+  disruptionAnalysis DisruptionAnalysis?
 
   @@index([publishedAt])
   @@index([category])
   @@index([sourceName])
   @@index([summaryStatus])
+}
+
+// On-demand "Analyser forstyrrelse" result (src/lib/disruptionAnalysis.ts),
+// generated only when a reader clicks the button on an article — never
+// automatically during ingest, since the four-step analysis is a heavier
+// Claude call than the regular summary and not relevant to every article.
+// Cached one-to-one per article so re-opening the panel doesn't re-run it.
+model DisruptionAnalysis {
+  id        String   @id @default(cuid())
+  articleId String   @unique
+  article   Article  @relation(fields: [articleId], references: [id], onDelete: Cascade)
+  data      Json
+  createdAt DateTime @default(now())
 }
 
 // Links an article to 0-3 entries from the curated glossary in

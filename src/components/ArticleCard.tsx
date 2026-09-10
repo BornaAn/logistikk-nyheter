@@ -5,6 +5,7 @@ import { CATEGORY_LABELS, CATEGORY_STYLES } from "@/lib/categories";
 import { findConcept } from "@/lib/concepts";
 import { excerpt, formatRelativeTime, readingTime } from "@/lib/format";
 import { PensumKoblingPanel } from "./PensumKoblingPanel";
+import { DisruptionAnalysisPanel } from "./DisruptionAnalysisPanel";
 import type { PensumKobling } from "@/lib/pensumKoblinger";
 import type { Category } from "@prisma/client";
 
@@ -192,6 +193,7 @@ export function ArticleCard({ article }: { article: ArticleCardData }) {
               </p>
 
               {article.pensumKobling && <PensumKoblingPanel kobling={article.pensumKobling} />}
+              <DisruptionAnalysisPanel articleId={article.id} />
 
               <div className="mt-3.5 pt-3 border-t border-card-border">
                 <a
