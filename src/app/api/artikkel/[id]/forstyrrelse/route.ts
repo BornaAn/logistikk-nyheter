@@ -48,8 +48,10 @@ export async function POST(
     });
   } catch (err) {
     console.error("Forstyrrelsesanalyse feilet", err);
+    // TEMP: leaking the real error message to diagnose a production-only
+    // failure I can't see server logs for right now — revert once found.
     return NextResponse.json(
-      { error: "Analysen feilet — prøv igjen om litt" },
+      { error: "Analysen feilet — prøv igjen om litt", debug: err instanceof Error ? err.message : String(err) },
       { status: 502 },
     );
   }
