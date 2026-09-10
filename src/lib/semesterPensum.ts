@@ -156,3 +156,13 @@ export function currentIsoWeek(date: Date = new Date()): number {
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
   return Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
 }
+
+/** A quiz seed key that only changes when the ISO week does — used by the
+ * course-specific quiz modes so a student gets the same five questions all
+ * week to actually practice and repeat, instead of a fresh random five
+ * every day that never lets an answer sink in. Contrast with
+ * `todaysDateKey()` in quiz.ts, which the general mode uses to reseed
+ * daily. */
+export function currentIsoWeekKey(date: Date = new Date()): string {
+  return `${date.getFullYear()}-W${currentIsoWeek(date)}`;
+}

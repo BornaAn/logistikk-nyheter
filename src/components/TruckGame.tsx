@@ -3,7 +3,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { getDailyChallenge, todaysDateKey, type QuizQuestion } from "@/lib/quiz";
 import { concepts as allConcepts, type Concept } from "@/lib/concepts";
-import { getCoursePensumConcepts, currentIsoWeek, type CourseSlug } from "@/lib/semesterPensum";
+import {
+  getCoursePensumConcepts,
+  currentIsoWeek,
+  currentIsoWeekKey,
+  type CourseSlug,
+} from "@/lib/semesterPensum";
 
 type Mode = "generell" | CourseSlug;
 
@@ -19,17 +24,17 @@ const MODES: ModeInfo[] = [
   {
     mode: "generell",
     title: "Generell",
-    description: "Blander begreper fra hele ordlisten — begge fag, alle uker.",
+    description: "Blander begreper fra hele ordlisten — begge fag, alle uker. Nye spørsmål hver dag.",
   },
   {
     mode: "oal121",
     title: "Kun ØAL121",
-    description: `Bare begreper fra ØAL121-pensum til og med uke ${WEEK}.`,
+    description: `Bare begreper fra ØAL121-pensum til og med uke ${WEEK}. Samme fem spørsmål hele uken, så du kan øve deg.`,
   },
   {
     mode: "oal118",
     title: "Kun ØAL118",
-    description: `Bare begreper fra ØAL118-pensum til og med uke ${WEEK}.`,
+    description: `Bare begreper fra ØAL118-pensum til og med uke ${WEEK}. Samme fem spørsmål hele uken, så du kan øve deg.`,
   },
 ];
 
@@ -102,8 +107,8 @@ function ModeSelector({ onSelect }: { onSelect: (mode: Mode) => void }) {
     <div className="rounded-lg border border-card-border bg-card card-shadow p-5 sm:p-6">
       <h2 className="font-serif text-lg font-bold mb-1">Velg dagens rute</h2>
       <p className="text-xs text-muted mb-4">
-        Samme fem flaskehalser for alle som velger samme variant i dag — kom tilbake i morgen for
-        en ny rute.
+        Samme rute for alle som velger samme variant samtidig — se beskrivelsen under hver for
+        hvor ofte den fornyes.
       </p>
       <div className="flex flex-col gap-2.5">
         {MODES.map((m) => {
@@ -137,7 +142,11 @@ export function TruckGame() {
   const questions = useMemo<QuizQuestion[]>(() => {
     if (!mode) return [];
     const pool = poolForMode(mode);
-    return getDailyChallenge(new Date(), 5, pool, mode);
+    // Generell reseeds daily (fresh trivia); the course modes reseed weekly
+    // (currentIsoWeekKey) so a student gets the same five questions all
+    // week to actually practice, not a new random five every day.
+    const seedKey = mode === "generell" ? todaysDateKey() : currentIsoWeekKey();
+    return getDailyChallenge(seedKey, 5, pool, mode);
   }, [mode]);
   const [current, setCurrent] = useState(0);
   const [selected, setSelected] = useState<number | null>(null);

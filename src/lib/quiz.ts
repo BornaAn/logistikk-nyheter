@@ -204,23 +204,32 @@ function buildSituationQuestion(
   };
 }
 
-/** Today's route: `count` questions, same for every visitor on a given
- * calendar day (UTC date string as the seed), different each day. Mixes
- * "what does X mean" and the harder "which concept is this?" question
- * types — the latter only for concepts with a written example scenario.
+/** `count` questions, same for every visitor who shares the same
+ * `seedKey` — different visitors on the same day get the identical round,
+ * different days (or weeks, depending on what `seedKey` encodes) get a
+ * different one. Mixes "what does X mean" and the harder "which concept is
+ * this?" question types — the latter only for concepts with a written
+ * example scenario.
  *
  * `pool` narrows which concepts the round draws from (e.g. one course's
  * pensum so far this semester) — defaults to the full glossary for the
- * general quiz. `poolKey` folds into the seed so the general/ØAL121/ØAL118
- * rounds are independent puzzles on the same day, not the same five
- * concepts re-skinned three times. */
+ * general quiz. `poolKey` folds into the seed alongside `seedKey` so the
+ * general/ØAL121/ØAL118 rounds are independent puzzles, not the same five
+ * concepts re-skinned three times.
+ *
+ * `seedKey` is deliberately just a string, not always "today's date": the
+ * general round re-seeds daily (pass `todaysDateKey()`) so it reads as a
+ * fresh daily trivia drop, but the course-specific rounds re-seed weekly
+ * (pass `currentIsoWeekKey()`) so a student gets the *same* five questions
+ * all week to actually practice and repeat, not a new random five each day
+ * that never lets an answer sink in. */
 export function getDailyChallenge(
-  date: Date,
+  seedKey: string,
   count = 5,
   pool: Concept[] = concepts,
   poolKey = "generell",
 ): QuizQuestion[] {
-  const seed = `${date.toISOString().slice(0, 10)}-${poolKey}`;
+  const seed = `${seedKey}-${poolKey}`;
   const rand = seededRandom(seed);
   const n = Math.min(count, pool.length);
   const chosen = seededShuffle(pool, rand).slice(0, n);
